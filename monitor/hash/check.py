@@ -1,0 +1,140 @@
+from typing import Dict
+import logging
+from typing import List
+from util import BAN_FILE, MAX_HASH_ENTRIES
+from monitor.hash.hash import _load_hash_data, generate_media_hashes, _save_hash_data
+import time
+import os
+import json
+
+logger = logging.getLogger(__name__)
+
+class ContentChecker:
+    def __init__(self):
+        self.hash_data = _load_hash_data()
+        self.banned_words = self._load_banned_words()
+    
+    def _load_banned_words(self) -> List[str]:
+        try:
+            if os.path.exists(BAN_FILE):
+                with open(BAN_FILE, 'r') as f:
+                    return json.load(f)
+            return []
+        except Exception as e:
+            logger.error(f"Error loading banned words: {e}")
+            return []
+    
+    def _contains_banned_words(self, text: str) -> bool:
+        if not text or not self.banned_words:
+            return False
+        text_lower = text.lower()
+        return any(word in text_lower for word in self.banned_words)
+    
+    async def check_group_content(self, messages: List) -> Dict:
+        """Check a media group for duplicates and banned words
+        Returns:
+            {
+                'clean_messages': list of non-duplicate messages,
+                'has_banned': bool if caption contains banned words,
+                'original_caption': str of combined captions
+            }
+        """
+        if not messages:
+            return {'clean_messages': [], 'has_banned': False, 'original_caption': ''}
+        
+        # Combine all captions from the group
+        combined_caption = "\n".join(
+            msg.message for msg in messages 
+            if hasattr(msg, 'message') and msg.message
+        )
+        
+        # Check for banned words in combined caption
+        has_banned = self._contains_banned_words(combined_caption)
+        
+        # Check each message for duplicates
+        clean_messages = []
+        new_hashes = []
+        
+        for message in messages:
+            is_duplicate = False
+            media_list = await generate_media_hashes(message)
+            
+            for media in media_list:
+                if media.get('skipped'):
+                    continue
+                
+                media_key = media.get('phash') or media.get('sha256')
+                
+                if media_key:
+                    if media_key in self.hash_data:
+                        is_duplicate = True
+                        break
+                    else:
+                        new_hashes.append(media)
+            
+            if not is_duplicate:
+                clean_messages.append(message)
+        
+        # Update hash data with new hashes from non-duplicate messages
+        if new_hashes:
+            self._update_hash_data(new_hashes)
+        
+        return {
+            'clean_messages': clean_messages,
+            'has_banned': has_banned,
+            'original_caption': combined_caption
+        }
+    
+    async def check_content(self, message) -> int:
+        """Check single message for duplicates and banned words
+        Returns same codes as before for backward compatibility"""
+        if isinstance(message, list):
+            result = await self.check_group_content(message)
+            if result['has_banned']:
+                return 2
+            if len(result['clean_messages']) < len(message):
+                return 1
+            return 0
+        
+        # Single message check (existing logic)
+        has_banned = self._contains_banned_words(getattr(message, 'message', ''))
+        
+        media_list = await generate_media_hashes(message)
+        is_duplicate = any(
+            (media.get('phash') or media.get('sha256')) in self.hash_data
+            for media in media_list
+            if not media.get('skipped')
+        )
+        
+        if not is_duplicate and media_list:
+            self._update_hash_data(media_list)
+        
+        if is_duplicate:
+            return 1
+        if has_banned:
+            return 2
+        return 0
+    
+    def _update_hash_data(self, new_hashes: List[Dict]):
+        """Update hash.json with new hashes"""
+        try:
+            current_data = _load_hash_data()
+            
+            for media in new_hashes:
+                media_key = media.get('phash') or media.get('sha256')
+                if media_key:
+                    current_data[media_key] = {
+                        'type': media.get('type'),
+                        'timestamp': time.time()
+                    }
+            
+            if len(current_data) > MAX_HASH_ENTRIES:
+                sorted_items = sorted(current_data.items(), 
+                                   key=lambda x: x[1].get('timestamp', 0))
+                current_data = dict(sorted_items[-MAX_HASH_ENTRIES:])
+            
+            _save_hash_data(current_data)
+            self.hash_data = current_data
+            
+        except Exception as e:
+            logger.error(f"Error updating hash data: {e}")
