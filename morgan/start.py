@@ -4,7 +4,7 @@ from util import load_users, save_users, load_upvotes, save_upvotes, format_text
 import os
 
 news="@Animes_News_Ocean"
-author=f"@suu_111"
+author=f"sυвαrυ nαтѕυkι"
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Handle /start command with image, caption, and buttons"""
     user = update.effective_user
