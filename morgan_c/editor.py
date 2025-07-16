@@ -111,12 +111,20 @@ class Editor:
             
             # Preserve special prefix characters
             special_chars = ""
-            if text and text[0] in ('❄️', '📍', '▪️', '💠'):
+            if text and text[0] in ('❄️'):
                 special_chars = text[0] + ' '
                 text = text[1:].lstrip()
             
-            # Translate the entire text at once
-            translated = GoogleTranslator(source='auto', target='en').translate(text)
+            # Add debug logging
+            logger.info(f"Text to translate: '{text}'")
+            
+            # Try with explicit Italian source first, then fallback to auto
+            translated = GoogleTranslator(source='it', target='en').translate(text)
+            if not translated:
+                translated = GoogleTranslator(source='auto', target='en').translate(text)
+                
+            # Add debug logging
+            logger.info(f"Translation result: '{translated}'")
             
             # Handle translation failures
             if not translated:
