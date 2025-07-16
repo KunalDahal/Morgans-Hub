@@ -63,6 +63,7 @@ class Editor:
             if not text:
                 return ""
             
+            # Preserve special prefix characters
             special_chars = ""
             if text and text[0] in ('❄️'):
                 special_chars = text[0] + ' '
@@ -71,22 +72,28 @@ class Editor:
             # Add debug logging
             logger.info(f"Text to translate: '{text}'")
             
+            # First try to detect language
             try:
                 detected_lang = GoogleTranslator(source='auto', target='en').detect(text)
                 source_lang = detected_lang if detected_lang else 'auto'
             except:
                 source_lang = 'auto'
             
+            # Try translation with detected source language
             translated = GoogleTranslator(source=source_lang, target='en').translate(text)
             
+            # If translation fails or returns None, return original text
             if not translated:
                 return special_chars + text
             
-            translated = translated.replace("&#39;", "'") 
+            # Clean up translation artifacts
+            translated = translated.replace("&#39;", "'")  # Fix HTML entities
             translated = translated.strip()
             
+            # Add debug logging
             logger.info(f"Translation result: '{translated}'")
             
+            # Reattach special characters
             return special_chars + translated
         except Exception as e:
             logger.error(f"Translation failed: {str(e)}")
@@ -99,14 +106,16 @@ class Editor:
             
         logger.info(f"Original text: '{text}'")
         
+        # Create patterns that match phrases with any whitespace variations
         patterns = []
         for phrase in self.remove_words:
             phrase = phrase.strip()
             if not phrase:
                 continue
                 
+            # Create a flexible pattern that handles any whitespace
             escaped = re.escape(phrase)
-            pattern = escaped.replace(r'\ ', r'\s+')  
+            pattern = escaped.replace(r'\ ', r'\s+')  # Match any whitespace sequence
             patterns.append(pattern)
             
         # Combine patterns into one regex
@@ -117,11 +126,13 @@ class Editor:
             cleaned_text = combined_pattern.sub('', text)
         else:
             cleaned_text = text
-
+        
+        # PRESERVE NEWLINES: Only clean extra spaces, not newlines
+        # Compress consecutive spaces/tabs within lines
         cleaned_text = re.sub(r'[ \t]{2,}', ' ', cleaned_text)
-
+        # Remove leading/trailing whitespace from each line
         cleaned_text = '\n'.join(line.strip() for line in cleaned_text.split('\n'))
-
+        # Remove empty lines with whitespace
         cleaned_text = re.sub(r'\n\s*\n', '\n\n', cleaned_text)
         
         logger.info(f"Cleaned text: '{cleaned_text}'")

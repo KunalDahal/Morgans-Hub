@@ -6,7 +6,7 @@ import time
 import random
 from collections import deque, defaultdict
 from monitor.session import create_session
-from util import get_bot_username, load_channels, save_channels, SOURCE_FILE
+from util import get_bot_username, load_channels, save_channels, SOURCE_FILE,get_dump_channel
 from telethon.errors import ChannelPrivateError, ChannelInvalidError, FloodWaitError
 from monitor.recovery import RecoverySystem
 from monitor.forward import Forwarder
@@ -273,7 +273,6 @@ class ChannelMonitor:
             raise
         
     async def _process_queue(self):
-        """Enhanced queue processor with detailed logging"""
         logger.info("Queue processor started with detailed logging")
         while self.running:
             async with self.queue_lock:
@@ -322,7 +321,15 @@ class ChannelMonitor:
                         should_forward = bool(check_result["clean_messages"])
 
                     if should_forward:
-                        forwarder = Forwarder(self.client, self.bot_username)
+                        # Check for long captions (new check_result == 3)
+                        caption = check_result["original_caption"]
+                        if len(caption) > 70:  # Long caption
+                            forward_channel_id = get_dump_channel()
+                            logger.info(f"Channel {channel_id}: Forwarding to long caption channel {forward_channel_id}")
+                        else:
+                            forward_channel_id = self.bot_username  # Default to bot
+                            
+                        forwarder = Forwarder(self.client, forward_channel_id)
 
                         logger.info(f"Channel {channel_id}: Starting forwarding process")
                         result = await forwarder.forward_with_retry(
@@ -360,21 +367,22 @@ class ChannelMonitor:
                             last_id = max(m.id for m in messages)
                             self.recovery.update_channel_state(channel_id, last_id)
                 else:
-                    # Single message processing
                     message = messages[0] if isinstance(messages, list) else messages
                     logger.info(
                         f"Channel {channel_id}: Processing single message {message.id}"
                     )
 
                     check_result = await self.content_checker.check_content(message)
+                    message_text = getattr(message, "message", "")
 
-                    if check_result == 0:  # Only forward if content is clean
+                    if check_result == 0:  # CLEAN - forward to bot
                         logger.info(
                             f"Channel {channel_id}: Message {message.id} passed checks"
                         )
-                        forwarder = Forwarder(self.client, self.bot_username)
+                        forward_channel_id = self.bot_username
+                        forwarder = Forwarder(self.client, forward_channel_id)
                         result = await forwarder.forward_with_retry(
-                            message, [message], getattr(message, "message", ""), channel_id
+                            message, [message], message_text, channel_id
                         )
 
                         if not result:
@@ -396,13 +404,82 @@ class ChannelMonitor:
                                 self.message_queue.appendleft((channel_id, messages))
                         else:
                             logger.info(
-                                f"Channel {channel_id}: Successfully forwarded message {message.id}"
+                                f"Channel {channel_id}: Successfully forwarded message {message.id} to bot"
                             )
                             last_id = message.id
                             self.recovery.update_channel_state(channel_id, last_id)
-                    else:
+                    
+                    # elif check_result == 2:  # BANNED - forward to banned channel
+                    #     logger.info(
+                    #         f"Channel {channel_id}: Message {message.id} contains banned words, forwarding to banned channel"
+                    #     )
+                    #     forward_channel_id = get_dump_channel()
+                    #     forwarder = Forwarder(self.client, forward_channel_id)
+                    #     result = await forwarder.forward_with_retry(
+                    #         message, [message], message_text, channel_id
+                    #     )
+
+                    #     if not result:
+                    #         logger.warning(
+                    #             f"Channel {channel_id}: Forwarding failed for message {message.id}"
+                    #         )
+                    #         current_backoff = self.channel_backoffs.get(
+                    #             channel_id, self.min_backoff
+                    #         )
+                    #         new_backoff = min(
+                    #             current_backoff * self.backoff_factor, self.max_backoff
+                    #         )
+                    #         self.channel_backoffs[channel_id] = current_time + new_backoff
+                    #         logger.warning(
+                    #             f"Channel {channel_id}: Setting backoff for {new_backoff:.1f}s"
+                    #         )
+
+                    #         async with self.queue_lock:
+                    #             self.message_queue.appendleft((channel_id, messages))
+                    #     else:
+                    #         logger.info(
+                    #             f"Channel {channel_id}: Successfully forwarded banned message {message.id} to channel {forward_channel_id}"
+                    #         )
+                    #         last_id = message.id
+                    #         self.recovery.update_channel_state(channel_id, last_id)
+                    
+                    elif check_result == 3:  
                         logger.info(
-                            f"Channel {channel_id}: Skipping message {message.id} (check result: {check_result})"
+                            f"Channel {channel_id}: Message {message.id} has long caption"
+                        )
+                        forward_channel_id = get_dump_channel()
+                        forwarder = Forwarder(self.client, forward_channel_id)
+                        result = await forwarder.forward_with_retry(
+                            message, [message], message_text, channel_id
+                        )
+
+                        if not result:
+                            logger.warning(
+                                f"Channel {channel_id}: Forwarding failed for message {message.id}"
+                            )
+                            current_backoff = self.channel_backoffs.get(
+                                channel_id, self.min_backoff
+                            )
+                            new_backoff = min(
+                                current_backoff * self.backoff_factor, self.max_backoff
+                            )
+                            self.channel_backoffs[channel_id] = current_time + new_backoff
+                            logger.warning(
+                                f"Channel {channel_id}: Setting backoff for {new_backoff:.1f}s"
+                            )
+
+                            async with self.queue_lock:
+                                self.message_queue.appendleft((channel_id, messages))
+                        else:
+                            logger.info(
+                                f"Channel {channel_id}: Successfully forwarded long caption message {message.id} to channel {forward_channel_id}"
+                            )
+                            last_id = message.id
+                            self.recovery.update_channel_state(channel_id, last_id)
+                    
+                    else:  # check_result == 1 & 2 (DUPLICATE & BANNED) - skip
+                        logger.info(
+                            f"Channel {channel_id}: Skipping message {message.id} (duplicate)"
                         )
                         last_id = message.id
                         self.recovery.update_channel_state(channel_id, last_id)

@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from monitor.mon import ChannelMonitor
+from monitor.huh import ChannelMonitor
 from monitor.sync import sync_channel_files
 
 # Configure logging

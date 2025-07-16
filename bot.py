@@ -2,8 +2,8 @@ import threading
 import logging
 import asyncio
 from monitor.run import main as run_monitor_bot
-from mizuki_editor import main as run_editor_bot
-from morgan.mizu import main as run_mizu_bot
+from morgan_c.morgans_c import main as run_editor_bot
+from morgan.morgans import main as run_mizu_bot
 
 logging.basicConfig(
     level=logging.INFO,

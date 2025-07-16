@@ -21,6 +21,7 @@ from morgan_c.commands.maintainence import get_maintenance_handlers
 from morgan_c.commands.remove import get_add_remove_word_handler, get_remove_remove_word_handler
 from morgan_c.commands.replace import get_rep_handlers
 from morgan_c.commands.start import get_start_handler
+from morgan_c.security import get_security_handlers
 
 reload(morgan_c.editor)
 from morgan_c.editor import Editor
@@ -123,6 +124,10 @@ def main():
         .get_updates_pool_timeout(30) \
         .post_init(post_init) \
         .build()
+    
+    # Add security handlers
+    for handler in get_security_handlers():  # <-- Add this line
+        application.add_handler(handler)     # <-- Add this line
     
     application.add_handler(get_start_handler())
     application.add_handler(get_help_handler())

@@ -1,5 +1,7 @@
 import os
 from typing import List,Union,Dict,Any
+from telegram import Update
+from telegram.ext import ContextTypes
 import json
 from dotenv import load_dotenv
 load_dotenv()
@@ -58,6 +60,10 @@ def format_text(text):
 
 def get_api_id():
     return int(os.getenv("API_ID"))
+
+def get_dump_channel():
+    return os.getenv("DUMP_CHANNEL_ID")
+
 
 def get_api_hash():
     return os.getenv("API_HASH")
@@ -281,3 +287,14 @@ def get_bot_username():
         raise ValueError("BOT_USERNAME not found in .env file")
     return username.lstrip("@")
         
+def get_morgans_ids() -> set[int]:
+    """Get admin IDs from environment variable"""
+    admin_ids = os.getenv("MORGANS_IDS", "")
+    return {int(id_str.strip()) for id_str in admin_ids.split(",") if id_str.strip()}
+
+async def is_admin(update: Update, context: ContextTypes.DEFAULT_TYPE) -> bool:
+    """Check if the user is an admin"""
+    user = update.effective_user
+    if not user:
+        return False
+    return user.id in get_morgans_ids()
