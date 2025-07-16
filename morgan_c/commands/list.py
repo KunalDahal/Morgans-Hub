@@ -2,9 +2,8 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import ContextTypes, CommandHandler, CallbackQueryHandler
 from morgan_c.commands.admin import admin_only
 from util import load_banned_words, load_channels, load_remove_words, load_replace_words
-import json
 import math
-import os
+
 
 ITEMS_PER_PAGE = 10
 
