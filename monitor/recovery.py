@@ -57,7 +57,7 @@ class RecoverySystem:
                 
                 messages = await client.get_messages(
                     entity, 
-                    limit=10,
+                    limit=20,
                     reverse=True  
                 )
                 

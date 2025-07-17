@@ -24,6 +24,7 @@ BAN_FILE = os.path.join(JSON_FOLDER, "banned_words.json")
 RECOVERY_FILE = os.path.join(JSON_FOLDER, "last_message_id.json")
 UPVOTE_FILE=os.path.join(JSON_FOLDER,"upvote.json")
 TARGET_FILE=os.path.join(JSON_FOLDER,"target_id.json")
+QUEUE_FILE=os.path.join(JSON_FOLDER,"queue.json")
 
 MAX_HASH_ENTRIES = int(os.getenv('MAX_HASH_ENTRIES', 10000))
 FILE_SIZE_LIMIT =  2_000_000_000  # 2GB
@@ -35,7 +36,7 @@ for file in [
         with open(file, "w") as f:
             json.dump([], f)
 
-for file in [HASH_FILE,RECOVERY_FILE,REQ_FILE, REPLACE_FILE,UPVOTE_FILE]:
+for file in [HASH_FILE,RECOVERY_FILE,REQ_FILE, REPLACE_FILE,UPVOTE_FILE,QUEUE_FILE]:
     if not os.path.exists(file):
         with open(file, "w") as f:
             json.dump({}, f)
@@ -291,3 +292,27 @@ async def is_admin(update: Update, context: ContextTypes.DEFAULT_TYPE) -> bool:
     if not user:
         return False
     return user.id in get_morgans_ids()
+
+def load_last_message_ids() -> Dict[str, int]:
+    """Load last message IDs from JSON file"""
+    try:
+        if not os.path.exists(RECOVERY_FILE):
+            return {}
+        
+        with open(RECOVERY_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+            return {str(k): int(v) for k, v in data.items()}
+    except Exception as e:
+        print(f"Error loading last message IDs: {e}")
+        return {}
+
+def save_last_message_ids(data: Dict[str, int]) -> bool:
+    """Save last message IDs to JSON file"""
+    try:
+        os.makedirs(JSON_FOLDER, exist_ok=True)
+        with open(RECOVERY_FILE, "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+        return True
+    except Exception as e:
+        print(f"Error saving last message IDs: {e}")
+        return False
