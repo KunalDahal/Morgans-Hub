@@ -7,10 +7,10 @@ from telegram.ext import (
     ContextTypes,
 )
 from util import get_bot_token_2, get_admin_ids
-from editor.editor import Editor
+from morgan_c.editor.editor import Editor
 from morgan_c.forward import get_media_group_messages, forward_media_group, forward_to_targets
 from importlib import reload
-import editor.editor
+import morgan_c.editor.editor
 from telegram import BotCommandScopeDefault, BotCommandScopeChat
 from morgan_c.commands.banned import get_banned_handlers
 from morgan_c.commands.channel import get_add_channel_handler, get_remove_channel_handler
@@ -21,9 +21,7 @@ from morgan_c.commands.replace import get_rep_handlers
 from morgan_c.commands.start import get_start_handler
 from morgan_c.security import get_security_handlers
 from morgan_c.commands.queue import get_queue_handler
-
-reload(editor.editor)
-from editor.editor import Editor
+reload(morgan_c.editor.editor)
 editor = Editor()
 
 logging.basicConfig(

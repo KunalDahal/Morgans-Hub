@@ -1,4 +1,4 @@
-# detect.py
+
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -13,7 +13,7 @@ def setup_driver():
     chrome_options.add_argument("--headless")
     chrome_options.add_argument("--disable-gpu")
     chrome_options.add_argument("--no-sandbox")
-    service = Service(executable_path='editor/chromedriver.exe')
+    service = Service(executable_path='morgan_c/editor/chromedriver.exe')
     return webdriver.Chrome(service=service, options=chrome_options)
 
 def get_translation(driver, source_lang, target_lang, text):

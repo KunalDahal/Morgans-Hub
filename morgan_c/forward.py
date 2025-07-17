@@ -12,7 +12,7 @@ def load_banned_words():
     try:
         with open(BAN_FILE, 'r') as f:
             data = json.load(f)
-            # Handle both list format and dictionary format for backward compatibility
+         
             if isinstance(data, list):
                 return data
             return data.get('banned_words', [])
@@ -27,13 +27,11 @@ def contains_banned_words(text):
     
     text_lower = text.lower()
     
-    # First check for exact matches (including phrases)
     for banned in BANNED_WORDS:
-        if ' ' in banned:  # This is a phrase
+        if ' ' in banned: 
             if banned.lower() in text_lower:
                 return True
-        else:  # Single word
-            # Check as whole word to avoid partial matches
+        else:  
             words_in_text = text_lower.split()
             if banned.lower() in words_in_text:
                 return True
@@ -81,7 +79,6 @@ async def forward_media_group(bot, messages: list[Message], new_caption: str):
         logger.info(f"Skipping single message in media group (ID: {messages[0].media_group_id})")
         return
     
-    # Check for banned words or long caption for dump channel
     dump_channel = get_dump_channel()
     if dump_channel and new_caption and (contains_banned_words(new_caption) or len(new_caption.split()) > CAPTION_LIMIT):
         try:
@@ -113,7 +110,6 @@ async def forward_media_group(bot, messages: list[Message], new_caption: str):
         except Exception as e:
             logger.error(f"Failed to forward to dump channel {dump_channel}: {e}")
     
-    # Normal forwarding to target channels
     media_group = []
     for i, message in enumerate(messages):
         if message.photo:
@@ -153,7 +149,6 @@ async def forward_to_targets(bot, message: Message, text: str):
         await message.reply_text("No target channels configured!")
         return
     
-    # Check for banned words or long caption for dump channel
     dump_channel = get_dump_channel()
     if dump_channel and text and (contains_banned_words(text) or len(text.split()) > 25):
         try:
@@ -182,7 +177,6 @@ async def forward_to_targets(bot, message: Message, text: str):
         except Exception as e:
             logger.error(f"Failed to forward to dump channel {dump_channel}: {e}")
     
-    # Normal forwarding to target channels
     for channel_id in targets:
         try:
             if message.photo:
