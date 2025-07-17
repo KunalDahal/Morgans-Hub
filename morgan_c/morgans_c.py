@@ -14,13 +14,13 @@ import editor.editor
 from telegram import BotCommandScopeDefault, BotCommandScopeChat
 from morgan_c.commands.banned import get_banned_handlers
 from morgan_c.commands.channel import get_add_channel_handler, get_remove_channel_handler
-from morgan_c.commands.help import get_help_handler
 from morgan_c.commands.list import get_list_handlers
 from morgan_c.commands.maintainence import get_maintenance_handlers
 from morgan_c.commands.remove import get_add_remove_word_handler, get_remove_remove_word_handler
 from morgan_c.commands.replace import get_rep_handlers
 from morgan_c.commands.start import get_start_handler
 from morgan_c.security import get_security_handlers
+from morgan_c.commands.queue import get_queue_handler
 
 reload(editor.editor)
 from editor.editor import Editor
@@ -41,6 +41,7 @@ async def post_init(application: Application) -> None:
     admin_commands = public_commands + [
         ("help", "Show all available commands"),
         ("a", "Add source channel"),
+        ("q", "Check queue count"),
         ("r", "Remove source channel"),
         ("ar", "Add word to removal list"),
         ("rr", "Remove word from removal list"),
@@ -124,14 +125,13 @@ def main():
         .post_init(post_init) \
         .build()
     
-    # Add security handlers
     for handler in get_security_handlers(): 
         application.add_handler(handler)    
     
     application.add_handler(get_start_handler())
-    application.add_handler(get_help_handler())
     application.add_handler(get_add_channel_handler())
     application.add_handler(get_remove_channel_handler())
+    application.add_handler(get_queue_handler())
     
     for handler in get_banned_handlers():
         application.add_handler(handler)

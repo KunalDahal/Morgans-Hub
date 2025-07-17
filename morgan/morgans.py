@@ -10,7 +10,6 @@ from morgan.commands.request import get_request_handler
 from morgan.commands.approve import get_approve_handler
 from morgan.edit.edit import get_edit_admin_handler
 from morgan.admin import get_morgans_ids
-from morgan.commands.help import get_help_handler
 from telegram import BotCommandScopeDefault, BotCommandScopeChat
 
 load_dotenv()
@@ -29,8 +28,7 @@ async def post_init(application: Application) -> None:
 
     admin_commands = public_commands + [
         ("edit", "Reply to a Forwarded message to get it edited with Mogans Format"),
-        ("start", "Start the bot"),
-        ("help", "Start the bot"),
+        ("start", "Start the bot")
     ]
 
     await application.bot.set_my_commands(
@@ -58,7 +56,6 @@ def main() -> None:
     application.add_handler(get_request_handler())
     application.add_handler(get_approve_handler())
     application.add_handler(get_edit_admin_handler())
-    application.add_handler(get_help_handler())
 
     logger.info("Starting bot...")
     application.run_polling(allowed_updates=Update.ALL_TYPES)

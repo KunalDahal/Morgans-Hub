@@ -9,6 +9,7 @@ from util import RECOVERY_FILE
 
 logger = logging.getLogger(__name__)
 
+
 class RecoverySystem:
     def __init__(self):
         self.last_message_ids: Dict[int, int] = {}

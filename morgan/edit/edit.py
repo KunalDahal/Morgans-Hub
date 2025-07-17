@@ -1,8 +1,7 @@
 import logging
 from telegram import Update,Message
 from telegram.ext import ContextTypes, CommandHandler
-from editor.editor import Editor
-from morgan.edit.forward import get_media_group_messages
+from morgan.edit.editor import Editor
 from morgan.admin import morgans_only
 from util import format_text 
 
@@ -31,10 +30,22 @@ async def edit_admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
     if not update.message.reply_to_message:
         await update.message.reply_text(
             format_text(
-                "🔍 Please reply to a message with /edit to modify its content.\n"
-                "Example:\n"
-                "1. Forward a message to this bot\n"
-                "2. Reply to it with /edit"
+                """
+❖ MORGANS HUB EDIT GUIDE ❖
+✦─────────────────────────✦
+Send your text ✉️
+→ Keep it short or medium-short.
+→ I’ll edit it in MORGANS style: short, sharp, news-bold.
+→ I may translate if needed.
+✦─────────────────────────✦
+❖HOW TO EDIT❖
+
+•Forward the message
+•Reply with /edit
+✦─────────────────────────✦
+That’s it. The news flies.
+✦─────────────────────────✦
+                """
             )
         )
         return

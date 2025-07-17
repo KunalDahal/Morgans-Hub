@@ -8,12 +8,18 @@ logger = logging.getLogger(__name__)
 
 @admin_only
 async def add_banned_word(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
     if not context.args:
-        await update.message.reply_text("Usage: /ab word1 word2 ...")
+        await update.message.reply_text("Usage: /ab word1 \"phrase with spaces\" word2 ...")
         return
     
-    words_to_add = context.args
+    # Join arguments with spaces to handle quoted phrases, then split properly
+    import shlex
+    try:
+        words_to_add = shlex.split(' '.join(context.args))
+    except ValueError:
+        await update.message.reply_text("Error: Invalid quoting in phrases. Make sure to properly quote phrases with spaces.")
+        return
+    
     banned_words = load_banned_words()
     added_words = []
     
@@ -25,18 +31,24 @@ async def add_banned_word(update: Update, context: ContextTypes.DEFAULT_TYPE):
     save_banned_words(banned_words)
     
     if added_words:
-        await update.message.reply_text(f"Added banned words: {', '.join(added_words)}")
+        await update.message.reply_text(f"Added banned words/phrases: {', '.join(added_words)}")
     else:
-        await update.message.reply_text("No new words were added (they were already banned)")
+        await update.message.reply_text("No new words/phrases were added (they were already banned)")
 
 @admin_only
 async def remove_banned_word(update: Update, context: ContextTypes.DEFAULT_TYPE):
-
     if not context.args:
-        await update.message.reply_text("Usage: /rb word1 word2 ...")
+        await update.message.reply_text("Usage: /rb word1 \"phrase with spaces\" word2 ...")
         return
     
-    words_to_remove = context.args
+    # Join arguments with spaces to handle quoted phrases, then split properly
+    import shlex
+    try:
+        words_to_remove = shlex.split(' '.join(context.args))
+    except ValueError:
+        await update.message.reply_text("Error: Invalid quoting in phrases. Make sure to properly quote phrases with spaces.")
+        return
+    
     banned_words = load_banned_words()
     removed_words = []
     
@@ -48,9 +60,9 @@ async def remove_banned_word(update: Update, context: ContextTypes.DEFAULT_TYPE)
     save_banned_words(banned_words)
     
     if removed_words:
-        await update.message.reply_text(f"Removed banned words: {', '.join(removed_words)}")
+        await update.message.reply_text(f"Removed banned words/phrases: {', '.join(removed_words)}")
     else:
-        await update.message.reply_text("None of these words were in the banned list")
+        await update.message.reply_text("None of these words/phrases were in the banned list")
 
 def get_banned_handlers():
     return [

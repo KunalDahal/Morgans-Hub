@@ -1,11 +1,9 @@
-# hash.py
 import hashlib
 import os
 import json
 import logging
 import tempfile
 from PIL import Image,UnidentifiedImageError
-import imagehash
 import io
 from moviepy import VideoFileClip
 from typing import List, Dict
@@ -53,7 +51,6 @@ def _save_hash_data(hash_data: Dict):
     except Exception as e:
         logger.error(f"Error saving hash data: {e}")
 
-# hash.py
 async def generate_media_hashes(message) -> List[Dict]:
     media_hashes = []
     
@@ -61,14 +58,11 @@ async def generate_media_hashes(message) -> List[Dict]:
         return media_hashes
 
     try:
-        # Get the media type first
         media_type = None
         file_size = 0
         
-        # Determine media type and size more safely
         if hasattr(message, 'photo'):
             media_type = 'photo'
-            # Check for document attribute safely
             if hasattr(message, 'document') and message.document:
                 file_size = getattr(message.document, 'size', 0)
         elif hasattr(message, 'video'):
@@ -79,10 +73,8 @@ async def generate_media_hashes(message) -> List[Dict]:
             media_type = 'document'
             file_size = getattr(message.document, 'size', 0)
         else:
-            # Unsupported media type
             return media_hashes
 
-        # Skip if over size limit (only if we could determine size)
         if file_size > FILE_SIZE_LIMIT:
             return [{'type': media_type, 'skipped': True}]
         if media_type == 'photo':

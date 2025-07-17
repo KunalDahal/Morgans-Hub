@@ -1,4 +1,3 @@
-# huh.py (simplified version)
 from monitor.hash.check import ContentChecker
 import asyncio
 import logging

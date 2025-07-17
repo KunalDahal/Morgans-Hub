@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 def create_session():
     session_string = get_session_string()
     if not session_string:
-        raise ValueError("Session string not found in .env file")
+        raise ValueError("Session string not found in .env file!")
     
     client = TelegramClient(
         session=StringSession(session_string),

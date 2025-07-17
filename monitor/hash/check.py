@@ -32,27 +32,17 @@ class ContentChecker:
         return any(word in text_lower for word in self.banned_words)
     
     async def check_group_content(self, messages: List) -> Dict:
-        """Check a media group for duplicates and banned words
-        Returns:
-            {
-                'clean_messages': list of non-duplicate messages,
-                'has_banned': bool if caption contains banned words,
-                'original_caption': str of combined captions
-            }
-        """
         if not messages:
             return {'clean_messages': [], 'has_banned': False, 'original_caption': ''}
         
-        # Combine all captions from the group
+        
         combined_caption = "\n".join(
             msg.message for msg in messages 
             if hasattr(msg, 'message') and msg.message
         )
         
-        # Check for banned words in combined caption (but we won't skip based on this)
         has_banned = self._contains_banned_words(combined_caption)
         
-        # Check each message for duplicates
         clean_messages = []
         new_hashes = []
         
@@ -76,7 +66,6 @@ class ContentChecker:
             if not is_duplicate:
                 clean_messages.append(message)
         
-        # Update hash data with new hashes from non-duplicate messages
         if new_hashes:
             self._update_hash_data(new_hashes)
         
@@ -87,18 +76,12 @@ class ContentChecker:
         }
     
     async def check_content(self, message) -> int:
-        """Check single message for duplicates and banned words
-        Returns:
-            0: Clean message
-            1: Duplicate message
-        """
         if isinstance(message, list):
             result = await self.check_group_content(message)
             if len(result['clean_messages']) < len(message):
                 return 1
             return 0
         
-        # Single message check (existing logic)
         media_list = await generate_media_hashes(message)
         is_duplicate = any(
             (media.get('phash') or media.get('sha256')) in self.hash_data
@@ -112,7 +95,6 @@ class ContentChecker:
         return 1 if is_duplicate else 0
     
     def _update_hash_data(self, new_hashes: List[Dict]):
-        """Update hash.json with new hashes"""
         try:
             current_data = _load_hash_data()
             

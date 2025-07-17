@@ -6,7 +6,7 @@ import asyncio
 logger=logging.getLogger(__name__)
 
 async def sync_channel_files():
-    """Ensure source_id.json and last_message_id.json stay synchronized"""
+
     while True:
         try:
             source_channels = set(load_channels())

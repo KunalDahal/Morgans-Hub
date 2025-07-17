@@ -24,19 +24,16 @@ class Forwarder:
         try:
             logger.info(f"Channel {channel_id}: Processing message {message.id}")
 
-            # Add small delay before forwarding
             await asyncio.sleep(self.forward_delay)
 
-            # Fix: Corrected target selection based on check_result
-            if check_result == 0:  # CLEAN -> bot
+            if check_result == 0:  
                 target = self.bot_username
-            elif check_result == 3:  # Special case -> dump
+            elif check_result == 3: 
                 target = get_dump_channel()
-            else:  # Other cases -> dump
+            else: 
                 pass
 
             if message.media:
-                # Try native forwarding first for better compression
                 try:
                     return await self.client.forward_messages(
                         target, message, from_peer=channel_id
@@ -59,7 +56,6 @@ class Forwarder:
     async def _upload_media(self, message, caption: str, channel_id: int, target: str):
         """Fallback media upload method"""
         try:
-            # Add small delay before uploading
             await asyncio.sleep(self.forward_delay)
 
             if isinstance(message.media, MessageMediaPhoto):
@@ -68,7 +64,7 @@ class Forwarder:
                     target,
                     message.media,
                     caption=caption,
-                    compress=True,  # Enable compression
+                    compress=True,  
                 )
             elif isinstance(message.media, MessageMediaDocument):
                 if hasattr(
@@ -94,18 +90,15 @@ class Forwarder:
     async def send_media_group(self, messages: List, caption: str, channel_id: int, check_result: int):
         """Send media group using Telethon's native methods"""
         try:
-            # Add small delay before sending media group
             await asyncio.sleep(self.forward_delay)
 
-            # Determine target based on check result
-            if check_result == 0:  # CLEAN
+            if check_result == 0:
                 target = self.bot_username
-            elif check_result == 3:  # Special case
+            elif check_result == 3:  
                 target = get_dump_channel()
-            else:  # Other cases
+            else:  
                 target = get_dump_channel()
 
-            # Prepare media list for Telethon
             media_objects = []
 
             for i, msg in enumerate(messages):
@@ -152,12 +145,10 @@ class Forwarder:
                 f"Channel {channel_id}: Starting upload for {len(clean_messages)} messages"
             )
 
-            # Handle single message
             if len(clean_messages) == 1:
                 msg = clean_messages[0]
                 return await self.upload_and_send(msg, original_caption, channel_id, check_result)
 
-            # Handle media groups
             if len(clean_messages) > 1:
                 return await self.send_media_group(
                     clean_messages, original_caption, channel_id, check_result

@@ -24,8 +24,21 @@ BANNED_WORDS = load_banned_words()
 def contains_banned_words(text):
     if not text or not BANNED_WORDS:
         return False
+    
     text_lower = text.lower()
-    return any(word.lower() in text_lower for word in BANNED_WORDS)
+    
+    # First check for exact matches (including phrases)
+    for banned in BANNED_WORDS:
+        if ' ' in banned:  # This is a phrase
+            if banned.lower() in text_lower:
+                return True
+        else:  # Single word
+            # Check as whole word to avoid partial matches
+            words_in_text = text_lower.split()
+            if banned.lower() in words_in_text:
+                return True
+    
+    return False
 
 async def get_media_group_messages(bot, message: Message):
     """Get all messages in a media group in correct order"""

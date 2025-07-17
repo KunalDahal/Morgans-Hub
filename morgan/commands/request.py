@@ -33,24 +33,20 @@ async def request_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             )
             return
 
-        # 2. Check group type
         if chat.type == "private":
             await update.message.reply_text("❌ 𝗦𝗼𝗿𝗿𝘆, 𝗜 𝗱𝗼𝗻'𝘁 𝘄𝗼𝗿𝗸 𝘄𝗶𝘁𝗵 𝗽𝗿𝗶𝘃𝗮𝘁𝗲 𝗴𝗿𝗼𝘂𝗽𝘀")
             return
         
-        # 3. Get member count
         try:
             member_count = await context.bot.get_chat_member_count(group_id_int)
         except Exception as e:
             await update.message.reply_text(f"❌ 𝗖𝗼𝘂𝗹𝗱𝗻'𝘁 𝗴𝗲𝘁 𝗺𝗲𝗺𝗯𝗲𝗿 𝗰𝗼𝘂𝗻𝘁: {str(e)}")
             return
 
-        # 4. Check minimum members
         if member_count < 0:
             await update.message.reply_text("❌ 𝗚𝗿𝗼𝘂𝗽 𝗺𝘂𝘀𝘁 𝗵𝗮𝘃𝗲 𝗮𝘁 𝗹𝗲𝗮𝘀𝘁 𝟭,𝟬𝟬𝟬 𝗺𝗲𝗺𝗯𝗲𝗿𝘀")
             return
 
-        # 5. Verify bot admin status
         try:
             bot_member = await context.bot.get_chat_member(group_id_int, context.bot.id)
             if bot_member.status not in ["administrator", "creator"]:
@@ -64,7 +60,6 @@ async def request_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text(f"❌ 𝗖𝗼𝘂𝗹𝗱𝗻'𝘁 𝘃𝗲𝗿𝗶𝗳𝘆 𝗮𝗱𝗺𝗶𝗻 𝘀𝘁𝗮𝘁𝘂𝘀: {str(e)}")
             return
 
-        # 6. Check if already approved
         with open(TARGET_FILE, 'r') as f:
             forward_list = json.load(f)
         

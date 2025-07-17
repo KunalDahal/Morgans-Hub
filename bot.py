@@ -15,7 +15,6 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 def run_async_in_thread(async_func, name):
-    """Run an async function in a thread with its own event loop"""
     def wrapper():
         loop = asyncio.new_event_loop()
         asyncio.set_event_loop(loop)
