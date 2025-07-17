@@ -159,13 +159,11 @@ class Editor:
         # Formatting
         main_text = escape_markdown_v2(replaced)
         footer_text = escape_markdown_v2("💠 ~ @Animes_News_Ocean")
-
-        header = "_*@MorgansNews\_Bot*_"
-        header_new = f"> ||{header}||\n\n"
+        
         main_text = f"❄️ {main_text}" if main_text else ""
         formatted_text = f"*{main_text}*" if main_text else ""
         footer = f"\n\n> _*{footer_text}*_"
 
-        final_output = f"{header_new}{formatted_text}{footer}"
+        final_output = f"{formatted_text}{footer}"
         logger.info(f"Final output: '{final_output}'")
         return final_output

@@ -59,44 +59,37 @@ class Editor:
 
     def translate_text(self, text):
         """Translate text to English while preserving structure and special characters"""
+        if not text:
+            return ""
+        
+        # Preserve special prefix characters
+        special_chars = ""
+        if text.startswith('❄️'):
+            special_chars = '❄️ '
+            text = text[1:].strip()
+        
+        # If text is empty after removing special chars
+        if not text:
+            return special_chars
+        
         try:
-            if not text:
-                return ""
+            # Create translator instance
+            translator = GoogleTranslator(source='auto', target='en')
             
-            # Preserve special prefix characters
-            special_chars = ""
-            if text and text[0] in ('❄️'):
-                special_chars = text[0] + ' '
-                text = text[1:].lstrip()
+            # Translate the text
+            translated = translator.translate(text)
             
-            # Add debug logging
-            logger.info(f"Text to translate: '{text}'")
-            
-            # First try to detect language
-            try:
-                detected_lang = GoogleTranslator(source='auto', target='en').detect(text)
-                source_lang = detected_lang if detected_lang else 'auto'
-            except:
-                source_lang = 'auto'
-            
-            # Try translation with detected source language
-            translated = GoogleTranslator(source=source_lang, target='en').translate(text)
-            
-            # If translation fails or returns None, return original text
+            # Return original if translation failed
             if not translated:
                 return special_chars + text
             
-            # Clean up translation artifacts
-            translated = translated.replace("&#39;", "'")  # Fix HTML entities
-            translated = translated.strip()
+            # Basic cleanup
+            translated = translated.replace("&#39;", "'").strip()
             
-            # Add debug logging
-            logger.info(f"Translation result: '{translated}'")
-            
-            # Reattach special characters
             return special_chars + translated
+            
         except Exception as e:
-            logger.error(f"Translation failed: {str(e)}")
+            logger.error(f"Translation failed: {e}")
             return special_chars + text
         
     def remove_words_from_text(self, text):
@@ -171,12 +164,10 @@ class Editor:
         main_text = escape_markdown_v2(replaced)
         footer_text = escape_markdown_v2("💠 ~ @Animes_News_Ocean")
 
-        header = "_*@MorgansNews\_Bot*_"
-        header_new = f"> ||{header}||\n\n"
         main_text = f"❄️ {main_text}" if main_text else ""
         formatted_text = f"*{main_text}*" if main_text else ""
         footer = f"\n\n> _*{footer_text}*_"
 
-        final_output = f"{header_new}{formatted_text}{footer}"
+        final_output = f"{formatted_text}{footer}"
         logger.info(f"Final output: '{final_output}'")
         return final_output

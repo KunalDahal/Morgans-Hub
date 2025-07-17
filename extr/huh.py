@@ -25,7 +25,7 @@ class ChannelMonitor:
         self.forward_attempts = {}
         self.processing_semaphore = asyncio.Semaphore(3)
         self.base_delay = 2
-        self.channel_check_jitter = (0,10)
+        self.channel_check_jitter = (0, 10)
         self.queue_delay_jitter = (0, 10)
         self.last_channel_file_check = time.time()  # Initialize with current time
         self.channel_file_check_interval = 30  # Reduced from 300 to 30 seconds

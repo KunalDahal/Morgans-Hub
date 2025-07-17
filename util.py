@@ -146,13 +146,6 @@ def get_target_channel() -> List[int]:
     if not channel_id:
         raise ValueError("ANO_ID not found in .env file")
     return [int(channel_id)]
-
-def get_vid_channel_id() -> int:
-
-    channel_id = os.getenv("VID_CHANNEL_ID")
-    if not channel_id:
-        raise ValueError("VID_CHANNEL_ID not found in .env file")
-    return int(channel_id)
             
 def load_banned_words():
     with open(BAN_FILE, "r") as f:
