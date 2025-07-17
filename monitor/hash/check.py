@@ -1,3 +1,4 @@
+# check.py
 from typing import Dict
 import logging
 from typing import List
@@ -48,7 +49,7 @@ class ContentChecker:
             if hasattr(msg, 'message') and msg.message
         )
         
-        # Check for banned words in combined caption
+        # Check for banned words in combined caption (but we won't skip based on this)
         has_banned = self._contains_banned_words(combined_caption)
         
         # Check each message for duplicates
@@ -87,18 +88,17 @@ class ContentChecker:
     
     async def check_content(self, message) -> int:
         """Check single message for duplicates and banned words
-        Returns same codes as before for backward compatibility"""
+        Returns:
+            0: Clean message
+            1: Duplicate message
+        """
         if isinstance(message, list):
             result = await self.check_group_content(message)
-            if result['has_banned']:
-                return 2
             if len(result['clean_messages']) < len(message):
                 return 1
             return 0
         
         # Single message check (existing logic)
-        has_banned = self._contains_banned_words(getattr(message, 'message', ''))
-        
         media_list = await generate_media_hashes(message)
         is_duplicate = any(
             (media.get('phash') or media.get('sha256')) in self.hash_data
@@ -109,11 +109,7 @@ class ContentChecker:
         if not is_duplicate and media_list:
             self._update_hash_data(media_list)
         
-        if is_duplicate:
-            return 1
-        if has_banned:
-            return 2
-        return 0
+        return 1 if is_duplicate else 0
     
     def _update_hash_data(self, new_hashes: List[Dict]):
         """Update hash.json with new hashes"""

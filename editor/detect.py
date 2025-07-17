@@ -1,3 +1,4 @@
+# detect.py
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -12,25 +13,38 @@ def setup_driver():
     chrome_options.add_argument("--headless")
     chrome_options.add_argument("--disable-gpu")
     chrome_options.add_argument("--no-sandbox")
-    service = Service(executable_path='editor/chromedriver.exe')
+    service = Service(executable_path='edior/chromedriver.exe')
     return webdriver.Chrome(service=service, options=chrome_options)
 
 def get_translation(driver, source_lang, target_lang, text):
     try:
-        driver.get(f"https://translate.google.com/?sl={source_lang}&tl={target_lang}&op=translate")
+        # Split the text into paragraphs to preserve newlines
+        paragraphs = text.split('\n')
+        translated_paragraphs = []
         
-        input_box = WebDriverWait(driver, 10).until(
-            EC.presence_of_element_located((By.CSS_SELECTOR, "textarea[aria-label='Source text']")))
-        input_box.clear()
-        input_box.send_keys(text)
+        for para in paragraphs:
+            if not para.strip():  # Preserve empty lines
+                translated_paragraphs.append('')
+                continue
+                
+            driver.get(f"https://translate.google.com/?sl={source_lang}&tl={target_lang}&op=translate")
+            
+            input_box = WebDriverWait(driver, 10).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, "textarea[aria-label='Source text']")))
+            input_box.clear()
+            input_box.send_keys(para)
+            
+            time.sleep(3)
+            
+            translated_elements = WebDriverWait(driver, 10).until(
+                EC.presence_of_all_elements_located((By.CSS_SELECTOR, "span[jsname='W297wb']"))
+            )
+            
+            translated_text = " ".join([el.text for el in translated_elements if el.text])
+            translated_paragraphs.append(translated_text)
         
-        time.sleep(3)
-        
-        translated_elements = WebDriverWait(driver, 10).until(
-            EC.presence_of_all_elements_located((By.CSS_SELECTOR, "span[jsname='W297wb']"))
-        )
-        
-        return " ".join([el.text for el in translated_elements if el.text])
+        # Reconstruct the text with original newlines
+        return '\n'.join(translated_paragraphs)
     
     except Exception as e:
         print(f"Translation error: {str(e)}")

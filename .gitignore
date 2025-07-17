@@ -6,7 +6,10 @@ __pycache__/
 # C extensions
 *.so
 
+#folder ignore
+JSON/
 # Distribution / packaging
+
 .Python
 build/
 develop-eggs/

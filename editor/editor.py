@@ -1,8 +1,8 @@
 import re
 import logging
-from deep_translator import GoogleTranslator
+from typing import List
 from util import load_remove_words, load_replace_words, escape_markdown_v2
-from summa import summarizer
+from editor.detect import translate_text
 
 logger = logging.getLogger(__name__)
 
@@ -10,6 +10,7 @@ class Editor:
     def __init__(self):
         self.remove_words = load_remove_words()
         self.replace_words = load_replace_words()
+        self.max_chunk_length = 5000 
         logger.info(f"Loaded remove words: {self.remove_words}")
         logger.info(f"Loaded replace words: {self.replace_words}")
             
@@ -57,37 +58,82 @@ class Editor:
             
         return emoji_pattern.sub('', text)
 
+    def split_text_into_chunks(self, text: str) -> List[str]:
+        """Split text into chunks while preserving paragraphs"""
+        if len(text) <= self.max_chunk_length:
+            return [text]
+            
+        # Split by paragraphs first
+        paragraphs = text.split('\n\n')
+        chunks = []
+        current_chunk = ""
+        
+        for para in paragraphs:
+            if len(current_chunk) + len(para) > self.max_chunk_length:
+                if current_chunk:
+                    chunks.append(current_chunk)
+                    current_chunk = ""
+                # If a single paragraph is too long, split by sentences
+                if len(para) > self.max_chunk_length:
+                    sentences = re.split(r'(?<=[.!?])\s+', para)
+                    for sentence in sentences:
+                        if len(current_chunk) + len(sentence) > self.max_chunk_length:
+                            if current_chunk:
+                                chunks.append(current_chunk)
+                                current_chunk = ""
+                        current_chunk += sentence + " "
+                else:
+                    current_chunk = para + "\n\n"
+            else:
+                current_chunk += para + "\n\n"
+        
+        if current_chunk.strip():
+            chunks.append(current_chunk.strip())
+            
+        return chunks
+
     def translate_text(self, text):
-        """Translate text to English while preserving structure and special characters"""
+        """Translate text to English while preserving newlines and structure"""
         try:
             if not text:
                 return ""
             
             special_chars = ""
-            if text and text[0] in ('❄️'):
+            if text and text[0] in ('☘︎'):
                 special_chars = text[0] + ' '
                 text = text[1:].lstrip()
             
-            # Add debug logging
             logger.info(f"Text to translate: '{text}'")
             
-            try:
-                detected_lang = GoogleTranslator(source='auto', target='en').detect(text)
-                source_lang = detected_lang if detected_lang else 'auto'
-            except:
-                source_lang = 'auto'
+            # Split into paragraphs to preserve structure
+            paragraphs = text.split('\n')
+            translated_paragraphs = []
             
-            translated = GoogleTranslator(source=source_lang, target='en').translate(text)
+            for para in paragraphs:
+                if not para.strip():  # Preserve empty lines
+                    translated_paragraphs.append('')
+                    continue
+                    
+                # Split long paragraphs into chunks if needed
+                if len(para) > self.max_chunk_length:
+                    chunks = self.split_text_into_chunks(para)
+                    translated_chunks = []
+                    for chunk in chunks:
+                        translated = translate_text(chunk)
+                        translated_chunks.append(translated)
+                    translated_para = ' '.join(translated_chunks)
+                else:
+                    translated_para = translate_text(para)
+                
+                translated_paragraphs.append(translated_para)
             
-            if not translated:
-                return special_chars + text
+            # Reconstruct with original newlines
+            translated_text = '\n'.join(translated_paragraphs)
+            translated_text = translated_text.strip()
             
-            translated = translated.replace("&#39;", "'") 
-            translated = translated.strip()
+            logger.info(f"Translation result: '{translated_text}'")
             
-            logger.info(f"Translation result: '{translated}'")
-            
-            return special_chars + translated
+            return special_chars + translated_text
         except Exception as e:
             logger.error(f"Translation failed: {str(e)}")
             return special_chars + text
@@ -119,9 +165,7 @@ class Editor:
             cleaned_text = text
 
         cleaned_text = re.sub(r'[ \t]{2,}', ' ', cleaned_text)
-
         cleaned_text = '\n'.join(line.strip() for line in cleaned_text.split('\n'))
-
         cleaned_text = re.sub(r'\n\s*\n', '\n\n', cleaned_text)
         
         logger.info(f"Cleaned text: '{cleaned_text}'")
@@ -156,14 +200,19 @@ class Editor:
         replaced = self.replace_words_in_text(translated)
         logger.info(f"After word replacement: '{replaced}'")
         
-        # Formatting
-        main_text = escape_markdown_v2(replaced)
-        footer_text = escape_markdown_v2("💠 ~ @Animes_News_Ocean")
-        
-        main_text = f"❄️ {main_text}" if main_text else ""
-        formatted_text = f"*{main_text}*" if main_text else ""
-        footer = f"\n\n> _*{footer_text}*_"
+        header_line = "─── ⋆⋅☆⋅⋆ ───"
+        footer_line = "─── ⋆⋅☆⋅⋆ ───"
+        headerl = f"`{header_line.center(60)}`\n\n"  # Markdown code block keeps spacing fixed
 
-        final_output = f"{formatted_text}{footer}"
+        # Escape special characters in footer_text
+        footer_text = escape_markdown_v2("💠 ~ @Animes_News_Ocean")
+        footerl = f"\n\n`{footer_line.center(60)}`\n\n> _*{footer_text}*_"  # Escaped '>' and '_'
+
+        main_text = escape_markdown_v2(replaced)
+        main_text = f"❖ {main_text}" if main_text else ""
+        formatted_text = f"*{main_text}*" if main_text else ""
+
+        # Remove redundant footer if not needed
+        final_output = f"{headerl}{formatted_text}{footerl}"
         logger.info(f"Final output: '{final_output}'")
         return final_output

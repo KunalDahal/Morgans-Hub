@@ -28,15 +28,15 @@ QUEUE_FILE=os.path.join(JSON_FOLDER,"queue.json")
 
 MAX_HASH_ENTRIES = int(os.getenv('MAX_HASH_ENTRIES', 10000))
 FILE_SIZE_LIMIT =  2_000_000_000  # 2GB
-
+CAPTION_LIMIT=50
 for file in [
-    SOURCE_FILE,USER_FILE,TARGET_FILE, REMOVE_FILE,BAN_FILE
+    SOURCE_FILE,USER_FILE,TARGET_FILE, REMOVE_FILE,BAN_FILE,QUEUE_FILE
 ]:
     if not os.path.exists(file):
         with open(file, "w") as f:
             json.dump([], f)
 
-for file in [HASH_FILE,RECOVERY_FILE,REQ_FILE, REPLACE_FILE,UPVOTE_FILE,QUEUE_FILE]:
+for file in [HASH_FILE,RECOVERY_FILE,REQ_FILE, REPLACE_FILE,UPVOTE_FILE]:
     if not os.path.exists(file):
         with open(file, "w") as f:
             json.dump({}, f)

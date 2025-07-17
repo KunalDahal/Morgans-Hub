@@ -244,22 +244,20 @@ class ChannelMonitor:
                 
         except Exception as e:
             logger.error(f"Error processing item from {channel_id}: {e}")
-
+            
     async def process_single_message(self, message):
         """Process a single message"""
         channel_id = message.chat_id
         check_result = await self.content_checker.check_content(message)
         message_text = getattr(message, "message", "")
         
-        if check_result != 0:
-            logger.info(f"Skipping message {message.id} in {channel_id} (check result: {check_result})")
+        if check_result == 1:
+            logger.info(f"Skipping duplicate message {message.id} in {channel_id}")
             return
         
-        target = self.bot_username if len(message_text) <= 70 else get_dump_channel()
-            
-        forwarder = Forwarder(self.client, self.bot_username)
+        forwarder = Forwarder(self.client)
         await forwarder.forward_with_retry(
-            message, [message], message_text, channel_id, check_result
+            message, [message], message_text, channel_id, 0
         )
 
     async def process_media_group(self, messages):
@@ -270,10 +268,6 @@ class ChannelMonitor:
         channel_id = messages[0].chat_id
         group_result = await self.content_checker.check_group_content(messages)
         
-        if group_result['has_banned']:
-            logger.info(f"Skipping banned group in {channel_id}")
-            return
-            
         clean_messages = group_result['clean_messages']
         if not clean_messages:
             logger.info(f"Skipping duplicate group in {channel_id}")
@@ -281,9 +275,7 @@ class ChannelMonitor:
             
         caption = group_result['original_caption']
         
-        target = self.bot_username if len(caption) <= 70 else get_dump_channel()
-            
-        forwarder = Forwarder(self.client, self.bot_username)
+        forwarder = Forwarder(self.client)
         await forwarder.forward_with_retry(
-            messages, clean_messages, caption, channel_id, 0 if not group_result['has_banned'] else 3
+            messages, clean_messages, caption, channel_id, 0
         )

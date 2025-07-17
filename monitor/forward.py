@@ -6,15 +6,15 @@ import asyncio
 import random
 from typing import List, Union
 import os
-from util import get_dump_channel
+from util import get_dump_channel,get_bot_username
 
 logger = logging.getLogger(__name__)
 
 
 class Forwarder:
-    def __init__(self, client, bot_username):
+    def __init__(self, client):
         self.client = client
-        self.bot_username = bot_username
+        self.bot_username = get_bot_username()
         self.current_operations = {}
         self.operation_lock = asyncio.Lock()
         self.forward_delay = 1.0 
@@ -27,13 +27,13 @@ class Forwarder:
             # Add small delay before forwarding
             await asyncio.sleep(self.forward_delay)
 
-            # Determine target based on check result
-            if check_result == 0:  # CLEAN
+            # Fix: Corrected target selection based on check_result
+            if check_result == 0:  # CLEAN -> bot
                 target = self.bot_username
-            elif check_result == 3:  # Special case
+            elif check_result == 3:  # Special case -> dump
                 target = get_dump_channel()
-            else:  # Other cases
-                target = get_dump_channel()
+            else:  # Other cases -> dump
+                pass
 
             if message.media:
                 # Try native forwarding first for better compression
