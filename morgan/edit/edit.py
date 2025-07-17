@@ -1,7 +1,7 @@
 import logging
-from telegram import Update,InputMediaPhoto,InputMediaVideo,Message
+from telegram import Update,Message
 from telegram.ext import ContextTypes, CommandHandler
-from morgan.edit.editor import Editor
+from editor.editor import Editor
 from morgan.edit.forward import get_media_group_messages
 from morgan.admin import morgans_only
 from util import format_text 

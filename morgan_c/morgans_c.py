@@ -4,14 +4,13 @@ from telegram.ext import (
     Application,
     MessageHandler,
     filters,
-    CommandHandler,
     ContextTypes,
 )
 from util import get_bot_token_2, get_admin_ids
-from morgan_c.editor import Editor
+from editor.editor import Editor
 from morgan_c.forward import get_media_group_messages, forward_media_group, forward_to_targets
 from importlib import reload
-import morgan_c.editor
+import editor.editor
 from telegram import BotCommandScopeDefault, BotCommandScopeChat
 from morgan_c.commands.banned import get_banned_handlers
 from morgan_c.commands.channel import get_add_channel_handler, get_remove_channel_handler
@@ -23,8 +22,8 @@ from morgan_c.commands.replace import get_rep_handlers
 from morgan_c.commands.start import get_start_handler
 from morgan_c.security import get_security_handlers
 
-reload(morgan_c.editor)
-from morgan_c.editor import Editor
+reload(editor.editor)
+from editor.editor import Editor
 editor = Editor()
 
 logging.basicConfig(
@@ -126,8 +125,8 @@ def main():
         .build()
     
     # Add security handlers
-    for handler in get_security_handlers():  # <-- Add this line
-        application.add_handler(handler)     # <-- Add this line
+    for handler in get_security_handlers(): 
+        application.add_handler(handler)    
     
     application.add_handler(get_start_handler())
     application.add_handler(get_help_handler())
