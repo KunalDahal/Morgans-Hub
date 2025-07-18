@@ -1,8 +1,9 @@
 import re
 import logging
-from typing import List
+from typing import List, Optional
 from util import load_remove_words, load_replace_words, escape_markdown_v2
-from morgan.edit.detect_ru import translate_text
+from morgan_c.editor.detect_it import translate_text as translate_it
+from morgan.edit.detect_ru import translate_text as translate_ru
 
 logger = logging.getLogger(__name__)
 
@@ -91,18 +92,18 @@ class Editor:
             
         return chunks
 
-    def translate_text(self, text):
-        """Translate text to English while preserving newlines and structure"""
+    def translate_text(self, text, lang: Optional[str] = None):
+        """Translate text to English if language specified, while preserving newlines and structure"""
         try:
-            if not text:
-                return ""
+            if not text or not lang:
+                return text
             
             special_chars = ""
-            if text and text[0] in ('☘︎'):
+            if text and text[0] in ('❖'):
                 special_chars = text[0] + ' '
                 text = text[1:].lstrip()
             
-            logger.info(f"Text to translate: '{text}'")
+            logger.info(f"Text to translate ({lang}): '{text}'")
             
             paragraphs = text.split('\n')
             translated_paragraphs = []
@@ -116,11 +117,11 @@ class Editor:
                     chunks = self.split_text_into_chunks(para)
                     translated_chunks = []
                     for chunk in chunks:
-                        translated = translate_text(chunk)
+                        translated = translate_it(chunk) if lang == 'it' else translate_ru(chunk)
                         translated_chunks.append(translated)
                     translated_para = ' '.join(translated_chunks)
                 else:
-                    translated_para = translate_text(para)
+                    translated_para = translate_it(para) if lang == 'it' else translate_ru(para)
                 
                 translated_paragraphs.append(translated_para)
             
@@ -165,7 +166,7 @@ class Editor:
         logger.info(f"Cleaned text: '{cleaned_text}'")
         return cleaned_text
 
-    async def process(self, caption):
+    async def process(self, caption, translation_lang: Optional[str] = None):
         if caption is None:
             caption = ""
         logger.info(f"Initial caption: '{caption}'")
@@ -186,9 +187,12 @@ class Editor:
         no_emojis = self.remove_emojis(url_removed)
         logger.info(f"After emoji removal: '{no_emojis}'")
         
-        # STEP 5: Translate
-        translated = self.translate_text(no_emojis.strip())
-        logger.info(f"After translation: '{translated}'")
+        # STEP 5: Translate if language specified
+        if translation_lang: 
+            translated = self.translate_text(no_emojis.strip(), translation_lang)
+            logger.info(f"After translation: '{translated}'")
+        else:
+            translated = no_emojis.strip()
         
         # STEP 6: Replace words
         replaced = self.replace_words_in_text(translated)

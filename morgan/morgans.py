@@ -27,7 +27,9 @@ async def post_init(application: Application) -> None:
     ]
 
     admin_commands = public_commands + [
-        ("edit", "Reply to a Forwarded message to get it edited with Mogans Format"),
+        ("edit", "No translation just Formatting"),
+        ("edit it", " Translate [Italian → English] + Formats"),
+        ("edit ru", " Translate [Russian → English] + Formats"),
         ("start", "Start the bot")
     ]
 

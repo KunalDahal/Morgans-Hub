@@ -1,5 +1,5 @@
 import logging
-from telegram import Update,Message
+from telegram import Update, Message
 from telegram.ext import ContextTypes, CommandHandler
 from morgan.edit.editor import Editor
 from morgan.admin import morgans_only
@@ -35,15 +35,18 @@ async def edit_admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE)
 ✦─────────────────────────✦
 Send your text ✉️
 → Keep it short or medium-short.
-→ I’ll edit it in MORGANS style: short, sharp, news-bold.
-→ I may translate if needed.
+→ I'll edit it in MORGANS style: short, sharp, news-bold.
+→ I may translate if needed (specify language: /edit it or /edit ru).
 ✦─────────────────────────✦
 ❖HOW TO EDIT❖
 
 •Forward the message
-•Reply with /edit
+•Reply with /edit it → Translate [Italian → English] + Formats
+•Reply with /edit ru → Translate [Russian → English] + Formats
+•Reply with /edit →  Formats
+
 ✦─────────────────────────✦
-That’s it. The news flies.
+That's it. The news flies.
 ✦─────────────────────────✦
                 """
             )
@@ -56,7 +59,15 @@ That’s it. The news flies.
     try:
         # Get and process the caption/text
         original_text = original_message.caption or original_message.text or ""
-        processed_text = await editor.process(original_text)
+        
+        # Determine translation language if specified
+        translation_lang = None
+        if context.args and len(context.args) > 0:
+            lang_arg = context.args[0].lower()
+            if lang_arg in ['it', 'ru']:
+                translation_lang = lang_arg
+        
+        processed_text = await editor.process(original_text, translation_lang)
 
         # Send processing notification
         status_msg = await update.message.reply_text(format_text("🔄 Processing your edit request..."))

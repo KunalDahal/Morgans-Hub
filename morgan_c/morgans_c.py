@@ -37,7 +37,6 @@ async def post_init(application: Application) -> None:
     ]
     
     admin_commands = public_commands + [
-        ("help", "Show all available commands"),
         ("a", "Add source channel"),
         ("q", "Check queue count"),
         ("r", "Remove source channel"),
@@ -81,16 +80,24 @@ async def block_non_admin_text(update: Update, context: ContextTypes.DEFAULT_TYP
 async def handle_admin_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     """Process and forward admin messages with proper media group handling"""
     try:
-        if update.message.media_group_id:
+        # First check if we even have a message
+        if not update.message:
+            logger.warning("Received update with no message")
+            return
+            
+        message = update.message
+        
+        # Handle media groups
+        if hasattr(message, 'media_group_id') and message.media_group_id:
             if hasattr(context, 'processed_groups'):
-                if update.message.media_group_id in context.processed_groups:
+                if message.media_group_id in context.processed_groups:
                     return
             else:
                 context.processed_groups = set()
             
-            messages = await get_media_group_messages(context.bot, update.message)
+            messages = await get_media_group_messages(context.bot, message)
             
-            context.processed_groups.add(update.message.media_group_id)
+            context.processed_groups.add(message.media_group_id)
             
             if len(messages) > 1:
                 caption = messages[0].caption if messages[0].caption else messages[0].text
@@ -98,20 +105,24 @@ async def handle_admin_message(update: Update, context: ContextTypes.DEFAULT_TYP
                 await forward_media_group(context.bot, messages, processed_text)
             return
         
-        if not hasattr(update.message, 'media_group_id') or not update.message.media_group_id:
-            content = update.message.caption if update.message.caption else update.message.text
-            logger.info(f"Received message from {update.effective_user.id}:")
-            logger.info(f"Content: '{content}'")
-            logger.info(f"Message ID: {update.message.message_id}")
-            logger.info(f"Media group ID: {getattr(update.message, 'media_group_id', 'N/A')}")
+        # Handle regular messages
+        content = message.caption if message.caption else message.text
+        if not content:  # Skip if there's no text content to process
+            return
             
-            processed_text = await editor.process(content) if content else ""
-            logger.info(f"Processed text: '{processed_text}'")
-            await forward_to_targets(context.bot, update.message, processed_text)
+        logger.info(f"Received message from {update.effective_user.id}:")
+        logger.info(f"Content: '{content}'")
+        logger.info(f"Message ID: {message.message_id}")
+        logger.info(f"Media group ID: {getattr(message, 'media_group_id', 'N/A')}")
+        
+        processed_text = await editor.process(content) if content else ""
+        logger.info(f"Processed text: '{processed_text}'")
+        await forward_to_targets(context.bot, message, processed_text)
         
     except Exception as e:
         logger.error(f"Error processing message: {e}", exc_info=True)
-        await update.message.reply_text(f"Error: {str(e)}")
+        if update.message:  # Only try to reply if we have a message
+            await update.message.reply_text(f"Error: {str(e)}")
 
 def main():
     """Start the bot with optimized connection settings"""
