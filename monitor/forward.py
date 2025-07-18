@@ -93,23 +93,20 @@ class Forwarder:
         try:
             await asyncio.sleep(self.forward_delay)
             
-            # Determine target
+            
             target = self.bot_username if check_result == 0 else self.bot_username
             
-            # Prepare media list with proper captions
             media_list = []
             for i, msg in enumerate(messages):
                 if not msg.media:
                     continue
                     
-                # Get the actual media object
                 media = msg.media
                 if hasattr(media, 'document'):
                     media = media.document
                 elif hasattr(media, 'photo'):
                     media = media.photo
-                    
-                # Use original message caption if available, otherwise use group caption
+                   
                 msg_caption = getattr(msg, "message", "") or (caption if i == 0 else "")
                 
                 media_list.append({
@@ -123,12 +120,11 @@ class Forwarder:
 
             logger.info(f"Channel {channel_id}: Sending media group with {len(media_list)} items to {target}")
             
-            # Send as album with the group caption
             return await self.client.send_file(
                 target,
                 [m['media'] for m in media_list],
                 captions=[m['caption'] for m in media_list],
-                caption=caption,  # Main caption for the group
+                caption=caption,  
                 supports_streaming=True
             )
 
@@ -144,7 +140,6 @@ class Forwarder:
         channel_id: int,
         check_result: int,
     ):
-        """Process and send messages with detailed logging"""
 
         if channel_id in self.current_operations:
             logger.info(

@@ -1,4 +1,3 @@
-# hash.py (updated)
 import hashlib
 import os
 import json
@@ -28,18 +27,17 @@ def compute_video_hashes(video_path: str) -> Dict:
     """Compute all hashes for a video by sampling frames"""
     try:
         clip = VideoFileClip(video_path)
-        end_time = min(10, clip.duration)  # Use first 10 seconds or full video if shorter
+        end_time = min(10, clip.duration) 
         phashes = []
         dhashes = []
         ahashes = []
         
-        # Sample frames at 2fps
         for t, img in clip.iter_frames(fps=2, with_times=True):
             if t > end_time:
                 break
             try:
                 pil_img = Image.fromarray(img)
-                # Generate all hash types for each frame
+         
                 phashes.append(imagehash.phash(pil_img))
                 dhashes.append(imagehash.dhash(pil_img))
                 ahashes.append(imagehash.average_hash(pil_img))
@@ -52,7 +50,6 @@ def compute_video_hashes(video_path: str) -> Dict:
         if not phashes:
             return {}
             
-        # Combine frame hashes by averaging
         avg_phash = str(imagehash.average_hash(phashes))
         avg_dhash = str(imagehash.average_hash(dhashes))
         avg_ahash = str(imagehash.average_hash(ahashes))
@@ -122,7 +119,7 @@ async def generate_media_hashes(message) -> List[Dict]:
                     return media_hashes
                     
                 try:
-                    # Generate multiple hashes for better detection
+
                     img = normalize_image(file_bytes)
                     phash = str(imagehash.phash(img))
                     dhash = str(imagehash.dhash(img))
@@ -137,7 +134,7 @@ async def generate_media_hashes(message) -> List[Dict]:
                         'sha256': sha256
                     })
                 except UnidentifiedImageError:
-                    # For non-image documents, use SHA256 only
+     
                     media_hashes.append({
                         'type': media_type,
                         'sha256': hashlib.sha256(file_bytes).hexdigest()

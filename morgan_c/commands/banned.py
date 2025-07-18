@@ -12,7 +12,6 @@ async def add_banned_word(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("Usage: /ab word1 \"phrase with spaces\" word2 ...")
         return
     
-    # Join arguments with spaces to handle quoted phrases, then split properly
     import shlex
     try:
         words_to_add = shlex.split(' '.join(context.args))
@@ -41,7 +40,6 @@ async def remove_banned_word(update: Update, context: ContextTypes.DEFAULT_TYPE)
         await update.message.reply_text("Usage: /rb word1 \"phrase with spaces\" word2 ...")
         return
     
-    # Join arguments with spaces to handle quoted phrases, then split properly
     import shlex
     try:
         words_to_remove = shlex.split(' '.join(context.args))

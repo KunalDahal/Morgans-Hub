@@ -166,13 +166,24 @@ class Editor:
         logger.info(f"Cleaned text: '{cleaned_text}'")
         return cleaned_text
 
+    def remove_info_symbols(self, text):
+        """Remove common info symbols like ℹ️ℹ️ℹ️"""
+        if not text:
+            return text
+        info_pattern = re.compile(r'ℹ️+ℹ*️*\s*')
+        return info_pattern.sub('', text)
+
     async def process(self, caption, translation_lang: Optional[str] = None):
         if caption is None:
             caption = ""
         logger.info(f"Initial caption: '{caption}'")
-
+        
+        # New STEP 0: Remove info symbols
+        no_info = self.remove_info_symbols(caption)
+        logger.info(f"After info symbol removal: '{no_info}'")
+        
         # STEP 1: Remove unwanted phrases FIRST
-        cleaned = self.remove_words_from_text(caption)
+        cleaned = self.remove_words_from_text(no_info)
         logger.info(f"After phrase removal: '{cleaned}'")
         
         # STEP 2: Remove hashtags

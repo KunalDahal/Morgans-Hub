@@ -57,10 +57,8 @@ That's it. The news flies.
     editor = Editor()
 
     try:
-        # Get and process the caption/text
         original_text = original_message.caption or original_message.text or ""
         
-        # Determine translation language if specified
         translation_lang = None
         if context.args and len(context.args) > 0:
             lang_arg = context.args[0].lower()
@@ -69,13 +67,10 @@ That's it. The news flies.
         
         processed_text = await editor.process(original_text, translation_lang)
 
-        # Send processing notification
         status_msg = await update.message.reply_text(format_text("🔄 Processing your edit request..."))
 
-        # Send the edited text back to the admin (text only)
         await send_text_only_back(context.bot, processed_text, update.effective_chat.id)
 
-        # Update status
         await status_msg.edit_text(
             format_text(
                 "✅ Successfully edited!"

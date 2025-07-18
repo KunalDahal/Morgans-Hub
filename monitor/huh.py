@@ -153,7 +153,6 @@ class ChannelMonitor:
             if not messages:
                 return
             
-            # Process messages in chronological order
             valid_messages = [
                 msg for msg in messages 
                 if not isinstance(msg, MessageService) and msg.id > last_id
@@ -168,11 +167,10 @@ class ChannelMonitor:
             logger.error(f"Error fetching messages for {channel_id}: {e}")
 
     async def _add_messages_to_queue(self, channel_id: int, messages: list):
-        # Always update last message ID immediately
+       
         newest_id = messages[-1].id
         self.recovery.update_channel_state(channel_id, newest_id)
         
-        # Then add to queue
         groups = defaultdict(list)
         for msg in messages:
             group_id = getattr(msg, "grouped_id", None)
@@ -194,7 +192,7 @@ class ChannelMonitor:
 
     async def queue_processor(self):
         logger.info("Queue processor started")
-        forwarder = Forwarder(self.client)  # Create one forwarder instance
+        forwarder = Forwarder(self.client) 
         
         while self.running:
             try:
@@ -223,7 +221,6 @@ class ChannelMonitor:
                         else:
                             await self.process_media_group(messages, forwarder)
                             
-                        # Small delay between processing items
                         await asyncio.sleep(0.5)
                         
                     except Exception as e:
@@ -268,7 +265,7 @@ class ChannelMonitor:
         check_result = await self.content_checker.check_content(message)
         message_text = getattr(message, "message", "")
         
-        if check_result == 1:  # Duplicate found
+        if check_result == 1:  
             logger.info(f"Skipping duplicate message {message.id} in {channel_id}")
             return
         
@@ -278,9 +275,9 @@ class ChannelMonitor:
                 message, [message], message_text, channel_id, 3 
             )
         else:
-            # Forward to bot if clean
+           
             await forwarder.forward_with_retry(
-                message, [message], message_text, channel_id, 0  # 0 = bot
+                message, [message], message_text, channel_id, 0 
             )
 
     async def process_media_group(self, messages, forwarder=None):
@@ -299,10 +296,8 @@ class ChannelMonitor:
             logger.info(f"Skipping duplicate group in {channel_id}")
             return
             
-        # Get the original caption from the first message or group result
         original_caption = group_result['original_caption']
         
-        # Ensure the first clean message has the caption, regardless of group size
         if clean_messages and not getattr(clean_messages[0], "message", ""):
             clean_messages[0].message = original_caption
         
@@ -314,7 +309,7 @@ class ChannelMonitor:
                     clean_messages, 
                     original_caption, 
                     channel_id, 
-                    3  # 3 = dump channel
+                    3 
                 )
             else:
                 logger.info(f"Forwarding clean media group to bot")
@@ -323,11 +318,11 @@ class ChannelMonitor:
                     clean_messages, 
                     original_caption, 
                     channel_id, 
-                    0  # 0 = bot
+                    0  
                 )
         except Exception as e:
             logger.error(f"Error forwarding media group: {e}")
-            # Optionally add back to queue with delay
+            
             await asyncio.sleep(5)
             await self.queue.add({
                 "channel_id": channel_id,

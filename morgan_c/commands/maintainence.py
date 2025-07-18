@@ -4,7 +4,7 @@ from telegram import Update
 from telegram.ext import ContextTypes, CommandHandler
 from morgan_c.commands.admin import admin_only
 import logging
-from util import REQ_FILE, SOURCE_FILE, REMOVE_FILE, REPLACE_FILE, BAN_FILE, HASH_FILE, RECOVERY_FILE,TARGET_FILE
+from util import REQ_FILE, SOURCE_FILE, REMOVE_FILE, REPLACE_FILE, BAN_FILE, HASH_FILE, RECOVERY_FILE,TARGET_FILE,QUEUE_FILE
 import psutil
 import time
 import asyncio
@@ -22,6 +22,7 @@ DEFAULT_STRUCTURES = {
     "recovery": {},
     "target":[],
     "user":[],
+    "queue":[]
     
 }
 
@@ -33,7 +34,8 @@ FILE_MAPPING = {
     "hash": HASH_FILE,
     "recovery": RECOVERY_FILE,
     "requests":REQ_FILE,
-    "target":TARGET_FILE
+    "target":TARGET_FILE,
+    "queue":QUEUE_FILE
 }
 
 @admin_only

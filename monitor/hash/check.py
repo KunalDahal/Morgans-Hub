@@ -1,4 +1,4 @@
-# check.py (updated)
+
 from typing import Dict
 import logging
 from typing import List
@@ -13,7 +13,7 @@ logger = logging.getLogger(__name__)
 class ContentChecker:
     def __init__(self):
         self.banned_words = self._load_banned_words()
-        self.HAMMING_THRESHOLD = 5  # Adjust based on testing
+        self.HAMMING_THRESHOLD = 5 
     
     def _load_banned_words(self) -> List[str]:
         try:
@@ -35,12 +35,10 @@ class ContentChecker:
         """Check if media is a duplicate using multiple hash types"""
         if not media or not hash_data:
             return False
-            
-        # First check SHA256 for exact matches
+        
         if media.get('sha256') and media['sha256'] in hash_data:
             return True
             
-        # Then check perceptual hashes with Hamming distance
         for hash_type in ['phash', 'dhash', 'ahash']:
             current_hash = media.get(hash_type)
             if not current_hash:
@@ -68,25 +66,23 @@ class ContentChecker:
         new_hashes = []
         hash_data = _load_hash_data()
         
-        has_duplicate = False
         for message in messages:
             media_list = await generate_media_hashes(message)
+            is_duplicate = False
             
             for media in media_list:
                 if media.get('skipped'):
                     continue
                     
                 if self._is_duplicate(media, hash_data):
-                    has_duplicate = True
+                    is_duplicate = True
                     break
                     
-            if not has_duplicate and media_list:
+            if not is_duplicate and media_list:
+                clean_messages.append(message)
                 new_hashes.extend(media_list)
         
-        if not has_duplicate:
-            clean_messages = messages.copy()
-        
-        if not has_duplicate and new_hashes:
+        if new_hashes:
             self._update_hash_data(new_hashes)
         
         return {
@@ -98,9 +94,7 @@ class ContentChecker:
     async def check_content(self, message) -> int:
         if isinstance(message, list):
             result = await self.check_group_content(message)
-            if len(result['clean_messages']) < len(message):
-                return 1
-            return 0
+            return 1 if not result['clean_messages'] else 0
         
         media_list = await generate_media_hashes(message)
         hash_data = _load_hash_data()
@@ -121,7 +115,6 @@ class ContentChecker:
             current_data = _load_hash_data()
             
             for media in new_hashes:
-                # Store all available hashes
                 if media.get('sha256'):
                     current_data[media['sha256']] = {
                         'type': media.get('type'),
@@ -131,7 +124,6 @@ class ContentChecker:
                         'ahash': media.get('ahash')
                     }
                 elif media.get('phash'):
-                    # If no SHA256, use phash as key
                     current_data[media['phash']] = {
                         'type': media.get('type'),
                         'timestamp': time.time(),

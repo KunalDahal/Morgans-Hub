@@ -23,7 +23,6 @@ async def add_channel(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ Invalid channel ID. Must be a supergroup/channel ID (starts with -100)")
         return
     
-    # Load existing data
     channel_ids = load_channels()
     last_message_ids = load_last_message_ids()
     
@@ -31,7 +30,6 @@ async def add_channel(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("ℹ️ Channel already in monitoring list")
         return
     
-    # Add to both files
     channel_ids.append(channel_id_int)
     last_message_ids[str(channel_id_int)] = last_message_id_int
     
@@ -54,7 +52,6 @@ async def remove_channel(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("❌ Invalid channel ID. Must be a number")
         return
     
-    # Load existing data
     channel_ids = load_channels()
     last_message_ids = load_last_message_ids()
     
@@ -62,7 +59,6 @@ async def remove_channel(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("ℹ️ Channel not in monitoring list")
         return
     
-    # Remove from both files
     channel_ids.remove(channel_id)
     if str(channel_id) in last_message_ids:
         del last_message_ids[str(channel_id)]

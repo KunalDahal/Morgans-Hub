@@ -143,26 +143,21 @@ async def do_upvote_callback(update: Update, context: ContextTypes.DEFAULT_TYPE)
     try:
         upvote_data = load_upvotes()
         
-        # Initialize users dictionary if not present
         if "users" not in upvote_data:
             upvote_data["users"] = {}
         
         if str(user.id) in upvote_data["users"]:
-            # User already voted - show message without trying to edit the same message
             await query.answer("Already Voted - Thanks!", show_alert=True)
             return
         
-        # New vote - add user ID and increment count
         upvote_data["users"][str(user.id)] = True
         upvote_data["count"] = upvote_data.get("count", 0) + 1
         
         if save_upvotes(upvote_data):
             await query.answer("✅ Thank you for your upvote!", show_alert=True)
-            # Refresh the upvote page to show the new count
             try:
                 await show_upvote_page(update, context)
             except Exception as e:
-                # If editing fails, just log it - we've already shown the alert
                 print(f"Error refreshing upvote page: {e}")
         else:
             await query.answer("❌ Failed to save your upvote. Please try again.", show_alert=True)
