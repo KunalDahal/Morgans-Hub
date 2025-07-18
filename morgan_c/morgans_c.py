@@ -6,6 +6,7 @@ from telegram.ext import (
     filters,
     ContextTypes,
 )
+import asyncio
 from util import get_bot_token_2, get_admin_ids
 from morgan_c.editor.editor import Editor
 from morgan_c.forward import get_media_group_messages, forward_media_group, forward_to_targets
@@ -167,7 +168,15 @@ def main():
         handle_admin_message
     ))
 
-    application.run_polling()
+    async def run_bot():
+        await application.initialize()
+        await application.start()
+        await application.updater.start_polling()
+        # Keep the bot running
+        await asyncio.Event().wait()
+
+    logger.info("Starting bot...")
+    asyncio.run(run_bot())
 
 if __name__ == '__main__':
     main()

@@ -10,6 +10,7 @@ from morgan.commands.request import get_request_handler
 from morgan.commands.approve import get_approve_handler
 from morgan.edit.edit import get_edit_admin_handler
 from morgan.admin import get_morgans_ids
+import asyncio
 from telegram import BotCommandScopeDefault, BotCommandScopeChat
 
 load_dotenv()
@@ -40,9 +41,7 @@ async def post_init(application: Application) -> None:
             admin_commands, scope=BotCommandScopeChat(admin_id)
         )
 
-
 def main() -> None:
-
     application = (
         Application.builder().token(get_bot_token()).post_init(post_init).build()
     )
@@ -57,9 +56,15 @@ def main() -> None:
     application.add_handler(get_approve_handler())
     application.add_handler(get_edit_admin_handler())
 
-    logger.info("Starting bot...")
-    application.run_polling(allowed_updates=Update.ALL_TYPES)
+    async def run_bot():
+        await application.initialize()
+        await application.start()
+        await application.updater.start_polling()
+        # Keep the bot running
+        await asyncio.Event().wait()
 
+    logger.info("Starting bot...")
+    asyncio.run(run_bot())
 
 if __name__ == "__main__":
     main()
