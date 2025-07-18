@@ -1,9 +1,9 @@
-# check.py
+# check.py (updated)
 from typing import Dict
 import logging
 from typing import List
 from util import BAN_FILE, MAX_HASH_ENTRIES
-from monitor.hash.hash import _load_hash_data, generate_media_hashes, _save_hash_data
+from monitor.hash.hash import _load_hash_data, generate_media_hashes, _save_hash_data, hamming_distance
 import time
 import os
 import json
@@ -13,6 +13,7 @@ logger = logging.getLogger(__name__)
 class ContentChecker:
     def __init__(self):
         self.banned_words = self._load_banned_words()
+        self.HAMMING_THRESHOLD = 5  # Adjust based on testing
     
     def _load_banned_words(self) -> List[str]:
         try:
@@ -30,6 +31,28 @@ class ContentChecker:
         text_lower = text.lower()
         return any(word in text_lower for word in self.banned_words)
 
+    def _is_duplicate(self, media: Dict, hash_data: Dict) -> bool:
+        """Check if media is a duplicate using multiple hash types"""
+        if not media or not hash_data:
+            return False
+            
+        # First check SHA256 for exact matches
+        if media.get('sha256') and media['sha256'] in hash_data:
+            return True
+            
+        # Then check perceptual hashes with Hamming distance
+        for hash_type in ['phash', 'dhash', 'ahash']:
+            current_hash = media.get(hash_type)
+            if not current_hash:
+                continue
+                
+            for stored_hash, stored_data in hash_data.items():
+                if hash_type in stored_data:
+                    distance = hamming_distance(current_hash, stored_data[hash_type])
+                    if distance < self.HAMMING_THRESHOLD:
+                        return True
+        return False
+
     async def check_group_content(self, messages: List) -> Dict:
         if not messages:
             return {'clean_messages': [], 'has_banned': False, 'original_caption': ''}
@@ -45,29 +68,25 @@ class ContentChecker:
         new_hashes = []
         hash_data = _load_hash_data()
         
-        # Check duplicates for each message in the group
+        has_duplicate = False
         for message in messages:
             media_list = await generate_media_hashes(message)
-            is_duplicate = False
             
             for media in media_list:
                 if media.get('skipped'):
                     continue
                     
-                # Prefer phash if available, fall back to sha256
-                media_key = media.get('phash') or media.get('sha256')
-                
-                if media_key and media_key in hash_data:
-                    is_duplicate = True
+                if self._is_duplicate(media, hash_data):
+                    has_duplicate = True
                     break
                     
-            # Only add non-duplicate messages
-            if not is_duplicate:
-                clean_messages.append(message)
+            if not has_duplicate and media_list:
                 new_hashes.extend(media_list)
         
-        # Update hash data only for new non-duplicate media
-        if new_hashes:
+        if not has_duplicate:
+            clean_messages = messages.copy()
+        
+        if not has_duplicate and new_hashes:
             self._update_hash_data(new_hashes)
         
         return {
@@ -87,7 +106,7 @@ class ContentChecker:
         hash_data = _load_hash_data()
         
         is_duplicate = any(
-            (media.get('phash') or media.get('sha256')) in hash_data
+            self._is_duplicate(media, hash_data)
             for media in media_list
             if not media.get('skipped')
         )
@@ -102,14 +121,23 @@ class ContentChecker:
             current_data = _load_hash_data()
             
             for media in new_hashes:
-                # Store both phash and sha256 if available, but prefer phash for lookup
-                media_key = media.get('phash') or media.get('sha256')
-                if media_key:
-                    current_data[media_key] = {
+                # Store all available hashes
+                if media.get('sha256'):
+                    current_data[media['sha256']] = {
                         'type': media.get('type'),
                         'timestamp': time.time(),
                         'phash': media.get('phash'),
-                        'sha256': media.get('sha256')
+                        'dhash': media.get('dhash'),
+                        'ahash': media.get('ahash')
+                    }
+                elif media.get('phash'):
+                    # If no SHA256, use phash as key
+                    current_data[media['phash']] = {
+                        'type': media.get('type'),
+                        'timestamp': time.time(),
+                        'phash': media['phash'],
+                        'dhash': media.get('dhash'),
+                        'ahash': media.get('ahash')
                     }
             
             if len(current_data) > MAX_HASH_ENTRIES:

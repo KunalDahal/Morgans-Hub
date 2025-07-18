@@ -1,12 +1,10 @@
-# forward.py
 import logging
 from telethon.tl.types import MessageMediaPhoto, MessageMediaDocument, InputSingleMedia
 from telethon.errors import FloodWaitError
 import asyncio
 import random
 from typing import List, Union
-import os
-from util import get_dump_channel,get_bot_username
+from util import get_bot_username
 
 logger = logging.getLogger(__name__)
 
@@ -32,7 +30,7 @@ class Forwarder:
             if check_result == 0:  
                 target = self.bot_username
             elif check_result == 3: 
-                target = get_dump_channel()
+                target = self.bot_username
             else: 
                 pass
 
@@ -96,7 +94,7 @@ class Forwarder:
             await asyncio.sleep(self.forward_delay)
             
             # Determine target
-            target = self.bot_username if check_result == 0 else get_dump_channel()
+            target = self.bot_username if check_result == 0 else self.bot_username
             
             # Prepare media list with proper captions
             media_list = []

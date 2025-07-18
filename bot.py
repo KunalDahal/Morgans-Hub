@@ -1,7 +1,7 @@
 import threading
 import logging
 import asyncio
-from monitor.run import main as run_monitor_bot
+from run import main as run_monitor_bot
 from morgan_c.morgans_c import main as run_editor_bot
 from morgan.morgans import main as run_mizu_bot
 
