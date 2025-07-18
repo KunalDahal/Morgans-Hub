@@ -27,9 +27,7 @@ async def post_init(application: Application) -> None:
     ]
 
     admin_commands = public_commands + [
-        ("edit", "No translation just Formatting"),
-        ("edit it", " Translate [Italian → English] + Formats"),
-        ("edit ru", " Translate [Russian → English] + Formats"),
+        ("edit", "Formats post; translates Italian/Russian to English if used [it|ru]"),
         ("start", "Start the bot")
     ]
 

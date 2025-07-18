@@ -302,7 +302,7 @@ class ChannelMonitor:
         # Get the original caption from the first message or group result
         original_caption = group_result['original_caption']
         
-        # Ensure the first clean message has the caption
+        # Ensure the first clean message has the caption, regardless of group size
         if clean_messages and not getattr(clean_messages[0], "message", ""):
             clean_messages[0].message = original_caption
         

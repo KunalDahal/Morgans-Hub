@@ -165,13 +165,24 @@ class Editor:
         logger.info(f"Cleaned text: '{cleaned_text}'")
         return cleaned_text
 
+    def remove_info_symbols(self, text):
+        """Remove common info symbols like ℹ️ℹ️ℹ️"""
+        if not text:
+            return text
+        info_pattern = re.compile(r'ℹ️+ℹ*️*\s*')
+        return info_pattern.sub('', text)
+
     async def process(self, caption):
         if caption is None:
             caption = ""
         logger.info(f"Initial caption: '{caption}'")
 
+        # New STEP 0: Remove info symbols
+        no_info = self.remove_info_symbols(caption)
+        logger.info(f"After info symbol removal: '{no_info}'")
+        
         # STEP 1: Remove unwanted phrases FIRST
-        cleaned = self.remove_words_from_text(caption)
+        cleaned = self.remove_words_from_text(no_info)
         logger.info(f"After phrase removal: '{cleaned}'")
         
         # STEP 2: Remove hashtags
@@ -182,18 +193,23 @@ class Editor:
         url_removed = re.sub(r'https?://\S+', '', no_hashtags)
         logger.info(f"After URL removal: '{url_removed}'")
         
-        # STEP 4: Remove emojis
+        # STEP 4: Remove emojis (except specific ones we want to keep)
         no_emojis = self.remove_emojis(url_removed)
         logger.info(f"After emoji removal: '{no_emojis}'")
         
-        # STEP 5: Translate
-        translated = self.translate_text(no_emojis.strip())
+        # STEP 5: Remove any existing decorative lines before adding ours
+        no_decorations = re.sub(r'─+\s*[⋆⋅☆⋅⋆]*\s*─+', '', no_emojis)
+        logger.info(f"After decoration removal: '{no_decorations}'")
+        
+        # STEP 6: Translate
+        translated = self.translate_text(no_decorations.strip())
         logger.info(f"After translation: '{translated}'")
         
-        # STEP 6: Replace words
+        # STEP 7: Replace words
         replaced = self.replace_words_in_text(translated)
         logger.info(f"After word replacement: '{replaced}'")
         
+        # Rest of the formatting remains the same...
         header_line = "─── ⋆⋅☆⋅⋆ ───"
         footer_line = "─── ⋆⋅☆⋅⋆ ───"
         headerl = f"`{header_line.center(65)}`\n\n" 
