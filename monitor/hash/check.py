@@ -12,7 +12,6 @@ logger = logging.getLogger(__name__)
 
 class ContentChecker:
     def __init__(self):
-        self.hash_data = _load_hash_data()
         self.banned_words = self._load_banned_words()
     
     def _load_banned_words(self) -> List[str]:
@@ -30,11 +29,10 @@ class ContentChecker:
             return False
         text_lower = text.lower()
         return any(word in text_lower for word in self.banned_words)
-    
+
     async def check_group_content(self, messages: List) -> Dict:
         if not messages:
             return {'clean_messages': [], 'has_banned': False, 'original_caption': ''}
-        
         
         combined_caption = "\n".join(
             msg.message for msg in messages 
@@ -45,27 +43,30 @@ class ContentChecker:
         
         clean_messages = []
         new_hashes = []
+        hash_data = _load_hash_data()
         
+        # Check duplicates for each message in the group
         for message in messages:
-            is_duplicate = False
             media_list = await generate_media_hashes(message)
+            is_duplicate = False
             
             for media in media_list:
                 if media.get('skipped'):
                     continue
-                
+                    
+                # Prefer phash if available, fall back to sha256
                 media_key = media.get('phash') or media.get('sha256')
                 
-                if media_key:
-                    if media_key in self.hash_data:
-                        is_duplicate = True
-                        break
-                    else:
-                        new_hashes.append(media)
-            
+                if media_key and media_key in hash_data:
+                    is_duplicate = True
+                    break
+                    
+            # Only add non-duplicate messages
             if not is_duplicate:
                 clean_messages.append(message)
+                new_hashes.extend(media_list)
         
+        # Update hash data only for new non-duplicate media
         if new_hashes:
             self._update_hash_data(new_hashes)
         
@@ -74,7 +75,7 @@ class ContentChecker:
             'has_banned': has_banned,
             'original_caption': combined_caption
         }
-    
+
     async def check_content(self, message) -> int:
         if isinstance(message, list):
             result = await self.check_group_content(message)
@@ -83,8 +84,10 @@ class ContentChecker:
             return 0
         
         media_list = await generate_media_hashes(message)
+        hash_data = _load_hash_data()
+        
         is_duplicate = any(
-            (media.get('phash') or media.get('sha256')) in self.hash_data
+            (media.get('phash') or media.get('sha256')) in hash_data
             for media in media_list
             if not media.get('skipped')
         )
@@ -99,11 +102,14 @@ class ContentChecker:
             current_data = _load_hash_data()
             
             for media in new_hashes:
+                # Store both phash and sha256 if available, but prefer phash for lookup
                 media_key = media.get('phash') or media.get('sha256')
                 if media_key:
                     current_data[media_key] = {
                         'type': media.get('type'),
-                        'timestamp': time.time()
+                        'timestamp': time.time(),
+                        'phash': media.get('phash'),
+                        'sha256': media.get('sha256')
                     }
             
             if len(current_data) > MAX_HASH_ENTRIES:
@@ -112,7 +118,6 @@ class ContentChecker:
                 current_data = dict(sorted_items[-MAX_HASH_ENTRIES:])
             
             _save_hash_data(current_data)
-            self.hash_data = current_data
             
         except Exception as e:
             logger.error(f"Error updating hash data: {e}")

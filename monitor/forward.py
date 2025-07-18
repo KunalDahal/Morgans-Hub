@@ -1,6 +1,6 @@
 # forward.py
 import logging
-from telethon.tl.types import MessageMediaPhoto, MessageMediaDocument
+from telethon.tl.types import MessageMediaPhoto, MessageMediaDocument, InputSingleMedia
 from telethon.errors import FloodWaitError
 import asyncio
 import random
@@ -25,7 +25,10 @@ class Forwarder:
             logger.info(f"Channel {channel_id}: Processing message {message.id}")
 
             await asyncio.sleep(self.forward_delay)
-
+        
+            if check_result == 1:
+                logger.info(f"Skipping duplicate message {message.id}")
+                return None
             if check_result == 0:  
                 target = self.bot_username
             elif check_result == 3: 
@@ -88,35 +91,48 @@ class Forwarder:
             raise
 
     async def send_media_group(self, messages: List, caption: str, channel_id: int, check_result: int):
-        """Send media group using Telethon's native methods"""
+        """Send media group with preserved caption"""
         try:
             await asyncio.sleep(self.forward_delay)
-
-            if check_result == 0:
-                target = self.bot_username
-            elif check_result == 3:  
-                target = get_dump_channel()
-            else:  
-                target = get_dump_channel()
-
-            media_objects = []
-
+            
+            # Determine target
+            target = self.bot_username if check_result == 0 else get_dump_channel()
+            
+            # Prepare media list with proper captions
+            media_list = []
             for i, msg in enumerate(messages):
                 if not msg.media:
                     continue
+                    
+                # Get the actual media object
+                media = msg.media
+                if hasattr(media, 'document'):
+                    media = media.document
+                elif hasattr(media, 'photo'):
+                    media = media.photo
+                    
+                # Use original message caption if available, otherwise use group caption
+                msg_caption = getattr(msg, "message", "") or (caption if i == 0 else "")
+                
+                media_list.append({
+                    'media': media,
+                    'caption': msg_caption,
+                    'entities': getattr(msg, 'entities', None)
+                })
 
-                logger.info(
-                    f"Channel {channel_id}: Processing media {i+1}/{len(messages)}"
-                )
-                media_objects.append(msg.media)
+            if not media_list:
+                return None
 
-            if media_objects:
-                logger.info(
-                    f"Channel {channel_id}: Sending media group with {len(media_objects)} items to {target}"
-                )
-                return await self.client.send_file(
-                    target, media_objects, caption=caption
-                )
+            logger.info(f"Channel {channel_id}: Sending media group with {len(media_list)} items to {target}")
+            
+            # Send as album with the group caption
+            return await self.client.send_file(
+                target,
+                [m['media'] for m in media_list],
+                captions=[m['caption'] for m in media_list],
+                caption=caption,  # Main caption for the group
+                supports_streaming=True
+            )
 
         except Exception as e:
             logger.error(f"Channel {channel_id}: Error sending media group: {e}")
