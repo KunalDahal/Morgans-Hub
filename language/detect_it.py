@@ -5,40 +5,34 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
-import time
+import os
+import undetected_chromedriver as uc
 
 def setup_driver():
-    chrome_options = Options()
-    chrome_options.add_argument("--window-size=1200,800")
-    chrome_options.add_argument("--headless")
-    chrome_options.add_argument("--disable-gpu")
-    chrome_options.add_argument("--no-sandbox")
-    chrome_options.binary_location = "/opt/google/chrome/chrome"
+    chrome_binary = "/opt/render/project/src/chrome/chrome-linux64/chrome"
+    chromedriver_path = "/opt/render/project/src/morgan/edit/language/chromedriver"
 
-    # Priority 1: Local chromedriver (same folder as detect files)
-    local_chromedriver = "/opt/render/project/src/morgan/edit/language/chromedriver"
-    # Priority 2: System-wide chromedriver (fallback)
-    system_chromedriver = "/usr/bin/chromedriver"
+    if os.path.exists(chromedriver_path) and os.access(chromedriver_path, os.X_OK):
+        print("Using local ChromeDriver")
 
-    try:
-        # Try local chromedriver first
-        service = Service(executable_path=local_chromedriver)
+        chrome_options = Options()
+        chrome_options.add_argument("--window-size=1200,800")
+        chrome_options.add_argument("--headless")
+        chrome_options.add_argument("--disable-gpu")
+        chrome_options.add_argument("--no-sandbox")
+        chrome_options.binary_location = chrome_binary
+
+        service = Service(executable_path=chromedriver_path)
         driver = webdriver.Chrome(service=service, options=chrome_options)
-        print("Using local chromedriver")
-        return driver
-    except Exception as e:
-        print(f"Local chromedriver failed ({str(e)}), trying system-wide chromedriver...")
-        try:
-            # Fall back to system-wide chromedriver
-            service = Service(executable_path=system_chromedriver)
-            driver = webdriver.Chrome(service=service, options=chrome_options)
-            print("Using system-wide chromedriver")
-            return driver
-        except Exception as e:
-            raise Exception(f"Both chromedrivers failed: {str(e)}")
+    else:
+        print("Local ChromeDriver not found or not executable. Using undetected-chromedriver fallback.")
+        driver = uc.Chrome(
+            headless=True,
+            version_main=138,  # Match your downloaded Chrome version
+            browser_executable_path=chrome_binary
+        )
 
-    # If all else fails, raise an error
-    raise Exception("No working chromedriver found")
+    return driver
 
 def get_translation(driver, source_lang, target_lang, text):
     try:
