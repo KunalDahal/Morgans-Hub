@@ -7,15 +7,23 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 
 def setup_driver():
+    from selenium import webdriver
+    from selenium.webdriver.chrome.service import Service
+    from selenium.webdriver.chrome.options import Options
+    import subprocess
+
     chrome_options = Options()
     chrome_options.add_argument("--window-size=1200,800")
-    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--headless=new")
     chrome_options.add_argument("--disable-gpu")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
+    chrome_options.add_argument("--remote-debugging-port=0")
     chrome_options.binary_location = "/tmp/chrome/chrome/chrome"
 
     local_chromedriver = "/tmp/chrome/chromedriver"
+    print(subprocess.getoutput(f"{local_chromedriver} --version"))  # Debug: print driver version
+
     service = Service(executable_path=local_chromedriver)
     driver = webdriver.Chrome(service=service, options=chrome_options)
     print("✅ Using ChromeDriver from /tmp/chrome")
