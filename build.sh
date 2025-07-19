@@ -1,54 +1,54 @@
 #!/bin/bash
-set -ex  # Exit on error and show commands
 
-# Chrome and Chromedriver version (matched pair)
-VERSION="138.0.7204.157"
-BASE_URL="https://storage.googleapis.com/chrome-for-testing-public"
+# build.sh - Script to install dependencies for Render deployment
+# Installs:
+# 1. Chrome and ChromeDriver
+# 2. Python packages from requirements.txt
 
-# Create a local directory for installation
-INSTALL_DIR="$HOME/chrome_install"
-mkdir -p "$INSTALL_DIR"
+set -e  # Exit immediately if any command fails
 
-# Install Chrome
-echo "Installing Chrome ${VERSION}..."
-wget -q "${BASE_URL}/${VERSION}/linux64/chrome-linux64.zip" -O chrome.zip
-unzip -q chrome.zip -d chrome-temp
-rm chrome.zip
-mv chrome-temp/chrome-linux64 "$INSTALL_DIR/chrome"
-ln -sf "$INSTALL_DIR/chrome/chrome" "$HOME/.local/bin/google-chrome"
+# Define installation directories
+CHROME_DIR="/opt/google/chrome"
+CHROMEDRIVER_LOCAL_DIR="/opt/render/project/src/morgan/edit/language"
+CHROMEDRIVER_SYSTEM_DIR="/usr/bin"
 
-# Install Chromedriver
-echo "Installing Chromedriver ${VERSION}..."
-wget -q "${BASE_URL}/${VERSION}/linux64/chromedriver-linux64.zip" -O chromedriver.zip
-unzip -q chromedriver.zip -d chromedriver-temp
-rm chromedriver.zip
+# URLs for Chrome and ChromeDriver (version 138.0.7204.157)
+CHROME_URL="https://storage.googleapis.com/chrome-for-testing-public/138.0.7204.157/linux64/chrome-linux64.zip"
+CHROMEDRIVER_URL="https://storage.googleapis.com/chrome-for-testing-public/138.0.7204.157/linux64/chromedriver-linux64.zip"
 
-# Local installation
-LOCAL_DRIVER_DIR="/opt/render/project/src/morgan/edit/language"
-mkdir -p "$LOCAL_DRIVER_DIR"
-mv chromedriver-temp/chromedriver-linux64/chromedriver "${LOCAL_DRIVER_DIR}/chromedriver"
-chmod +x "${LOCAL_DRIVER_DIR}/chromedriver"
+# Create directories if they don't exist
+sudo mkdir -p $CHROME_DIR
+sudo mkdir -p $CHROMEDRIVER_LOCAL_DIR
+sudo mkdir -p $CHROMEDRIVER_SYSTEM_DIR
 
-# Also add to PATH-accessible location
-mkdir -p "$HOME/.local/bin"
-mv chromedriver-temp/chromedriver-linux64/chromedriver "$HOME/.local/bin/chromedriver"
-chmod +x "$HOME/.local/bin/chromedriver"
+# Install system dependencies
+echo "Installing system dependencies..."
+sudo apt-get update
+sudo apt-get install -y unzip python3-pip
 
-# Cleanup
-rm -rf chrome-temp chromedriver-temp
+# Download and install Chrome
+echo "Downloading Chrome..."
+wget -O /tmp/chrome.zip $CHROME_URL
+unzip /tmp/chrome.zip -d /tmp
+sudo mv /tmp/chrome-linux64/* $CHROME_DIR
+sudo ln -sf $CHROME_DIR/chrome /usr/bin/chrome
 
-# Add to PATH if not already there
-if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
-    export PATH="$HOME/.local/bin:$PATH"
-fi
+# Download and install ChromeDriver (local copy)
+echo "Downloading ChromeDriver..."
+wget -O /tmp/chromedriver.zip $CHROMEDRIVER_URL
+unzip /tmp/chromedriver.zip -d /tmp
+sudo mv /tmp/chromedriver-linux64/chromedriver $CHROMEDRIVER_LOCAL_DIR/chromedriver
+sudo chmod +x $CHROMEDRIVER_LOCAL_DIR/chromedriver
 
-# Verify installations
-google-chrome --version || { echo "Chrome installation failed"; exit 1; }
-chromedriver --version || { echo "Chromedriver installation failed"; exit 1; }
+# Install ChromeDriver system-wide (fallback)
+sudo mv /tmp/chromedriver-linux64/chromedriver $CHROMEDRIVER_SYSTEM_DIR/chromedriver
+sudo chmod +x $CHROMEDRIVER_SYSTEM_DIR/chromedriver
 
 # Install Python dependencies
 echo "Installing Python dependencies..."
-pip install --upgrade pip
 pip install -r requirements.txt
 
-echo "Build completed successfully!"
+# Clean up
+rm -rf /tmp/chrome-linux64 /tmp/chromedriver-linux64 /tmp/chrome.zip /tmp/chromedriver.zip
+
+echo "All dependencies installed successfully."
