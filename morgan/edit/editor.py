@@ -3,7 +3,7 @@ import logging
 from typing import List, Optional
 from util import load_remove_words, load_replace_words, escape_markdown_v2
 from morgan_c.editor.detect_it import translate_text as translate_it
-from morgan.edit.detect_ru import translate_text as translate_ru
+from language.detect_ru import translate_text as translate_ru
 
 logger = logging.getLogger(__name__)
 

@@ -2,7 +2,7 @@ import re
 import logging
 from typing import List
 from util import load_remove_words, load_replace_words, escape_markdown_v2
-from morgan_c.editor.detect_it import translate_text
+from language.detect_it import translate_text
 
 logger = logging.getLogger(__name__)
 
