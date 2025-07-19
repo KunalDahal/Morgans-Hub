@@ -12,14 +12,14 @@ def setup_driver():
     chrome_options.add_argument("--headless")
     chrome_options.add_argument("--disable-gpu")
     chrome_options.add_argument("--no-sandbox")
-    chrome_options.binary_location = "/opt/google/chrome/chrome"
+    chrome_options.binary_location = "/tmp/chrome/chrome"
 
-    local_chromedriver = "/opt/render/project/src/language/chromedriver"
+    local_chromedriver = "/tmp/chrome/chromedriver"
     service = Service(executable_path=local_chromedriver)
     driver = webdriver.Chrome(service=service, options=chrome_options)
-    print("Using local chromedriver")
+    print("Using ChromeDriver from /tmp/chrome")
     return driver
-
+    
 def get_translation(driver, source_lang, target_lang, text):
     try:
         paragraphs = text.split('\n')
