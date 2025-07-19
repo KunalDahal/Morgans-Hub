@@ -14,7 +14,7 @@ def setup_driver():
     chrome_options.add_argument("--no-sandbox")
     chrome_options.binary_location = "/tmp/chrome/chrome"
 
-    local_chromedriver = "/tmp/chrome/chromedriver"
+    local_chromedriver = "/opt/render/project/src/language/chromedriver"
     service = Service(executable_path=local_chromedriver)
     driver = webdriver.Chrome(service=service, options=chrome_options)
     print("Using ChromeDriver from /tmp/chrome")
