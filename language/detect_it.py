@@ -5,20 +5,20 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
-from webdriver_manager.chrome import ChromeDriverManager
-import undetected_chromedriver as uc
 
 def setup_driver():
     chrome_options = Options()
+    chrome_options.add_argument("--window-size=1200,800")
     chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--disable-gpu")
     chrome_options.add_argument("--no-sandbox")
-    chrome_options.add_argument("--disable-dev-shm-usage")
-    
-    # Use webdriver-manager to automatically handle ChromeDriver
-    service = Service(ChromeDriverManager().install())
-    driver = webdriver.Chrome(service=service, options=chrome_options)
-    return driver
+    chrome_options.binary_location = "/opt/google/chrome/chrome"
 
+    local_chromedriver = "/opt/render/project/src/morgan/edit/language/chromedriver"
+    service = Service(executable_path=local_chromedriver)
+    driver = webdriver.Chrome(service=service, options=chrome_options)
+    print("Using local chromedriver")
+    return driver
 
 def get_translation(driver, source_lang, target_lang, text):
     try:
@@ -37,7 +37,6 @@ def get_translation(driver, source_lang, target_lang, text):
             input_box.clear()
             input_box.send_keys(para)
             
-            # Replace time.sleep(3) with WebDriverWait for translation to appear
             WebDriverWait(driver, 10).until(
                 EC.presence_of_all_elements_located((By.CSS_SELECTOR, "span[jsname='W297wb']"))
             )

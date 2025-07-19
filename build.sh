@@ -1,21 +1,31 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
-# build.sh - Optimized for Render's environment
+# Fail on error
+set -e
 
-set -e  # Exit on error
+echo "Starting build script..."
 
-# Install system dependencies
-echo "Installing system dependencies..."
-apt-get update -y
-apt-get install -y --no-install-recommends \
-    python3-pip \
-    python3-dev \
-    unzip \
-    wget
+# Install dependencies
+apt-get update
+apt-get install -y wget unzip gnupg ca-certificates fonts-liberation libappindicator3-1 libasound2 libatk-bridge2.0-0 libatk1.0-0 libcups2 libdbus-1-3 libgdk-pixbuf2.0-0 libnspr4 libnss3 libx11-xcb1 libxcomposite1 libxdamage1 libxrandr2 xdg-utils
 
-# Install Python dependencies
-echo "Installing Python packages..."
-pip install --upgrade pip
-pip install selenium==4.9.1 webdriver-manager==3.8.6
+# Download and install latest Google Chrome
+echo "Installing Chrome..."
+mkdir -p /opt/google/chrome
+wget -O chrome-linux64.zip https://storage.googleapis.com/chrome-for-testing-public/138.0.7204.157/linux64/chrome-linux64.zip
+unzip chrome-linux64.zip
+mv chrome-linux64/* /opt/google/chrome/
+chmod +x /opt/google/chrome/chrome
+rm -rf chrome-linux64 chrome-linux64.zip
 
-echo "Build completed successfully."
+# Confirm installation
+/opt/google/chrome/chrome --version
+
+echo "Chrome installed."
+
+# You should also place your chromedriver manually in:
+# /opt/render/project/src/morgan/edit/language/chromedriver
+# Make sure it's executable:
+chmod +x /opt/render/project/src/morgan/edit/language/chromedriver
+
+echo "Build script completed."
