@@ -13,9 +13,32 @@ def setup_driver():
     chrome_options.add_argument("--headless")
     chrome_options.add_argument("--disable-gpu")
     chrome_options.add_argument("--no-sandbox")
-    chrome_options.binary_location = "/opt/google/chrome/chrome" 
-    service = Service(executable_path='/opt/render/project/src/morgan/edit/language/chromedriver')
-    return webdriver.Chrome(service=service, options=chrome_options)
+    chrome_options.binary_location = "/opt/google/chrome/chrome"
+
+    # Priority 1: Local chromedriver (same folder as detect files)
+    local_chromedriver = "/opt/render/project/src/morgan/edit/language/chromedriver"
+    # Priority 2: System-wide chromedriver (fallback)
+    system_chromedriver = "/usr/bin/chromedriver"
+
+    try:
+        # Try local chromedriver first
+        service = Service(executable_path=local_chromedriver)
+        driver = webdriver.Chrome(service=service, options=chrome_options)
+        print("Using local chromedriver")
+        return driver
+    except Exception as e:
+        print(f"Local chromedriver failed ({str(e)}), trying system-wide chromedriver...")
+        try:
+            # Fall back to system-wide chromedriver
+            service = Service(executable_path=system_chromedriver)
+            driver = webdriver.Chrome(service=service, options=chrome_options)
+            print("Using system-wide chromedriver")
+            return driver
+        except Exception as e:
+            raise Exception(f"Both chromedrivers failed: {str(e)}")
+
+    # If all else fails, raise an error
+    raise Exception("No working chromedriver found")
 
 def get_translation(driver, source_lang, target_lang, text):
     try:
@@ -34,12 +57,12 @@ def get_translation(driver, source_lang, target_lang, text):
             input_box.clear()
             input_box.send_keys(para)
             
-            time.sleep(3)
-            
-            translated_elements = WebDriverWait(driver, 10).until(
+            # Replace time.sleep(3) with WebDriverWait for translation to appear
+            WebDriverWait(driver, 10).until(
                 EC.presence_of_all_elements_located((By.CSS_SELECTOR, "span[jsname='W297wb']"))
             )
             
+            translated_elements = driver.find_elements(By.CSS_SELECTOR, "span[jsname='W297wb']")
             translated_text = " ".join([el.text for el in translated_elements if el.text])
             translated_paragraphs.append(translated_text)
         
@@ -47,7 +70,7 @@ def get_translation(driver, source_lang, target_lang, text):
     
     except Exception as e:
         print(f"Translation error: {str(e)}")
-        return text  
+        return text
 
 def translate_text(text):
     driver = setup_driver()
