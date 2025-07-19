@@ -1,4 +1,3 @@
-
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -6,19 +5,26 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 import subprocess 
+import os
 
 def setup_driver():
     chrome_options = Options()
-    chrome_options.add_argument("--headless=new")  
-    chrome_options.add_argument("--remote-debugging-port=0") 
+    chrome_options.add_argument("--headless=new")
+    chrome_options.add_argument("--remote-debugging-port=0")  
     chrome_options.add_argument("--window-size=1200,800")
     chrome_options.add_argument("--disable-gpu")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
 
-    chrome_options.binary_location = "/tmp/chrome/chrome/chrome"
+    # Updated paths
+    chrome_options.binary_location = "/usr/local/bin/chrome/chrome"
+    chromedriver_path = "/usr/local/bin/chromedriver"
 
-    chromedriver_path = "/tmp/chrome/chromedriver"
+    # Verify paths exist
+    if not os.path.exists(chrome_options.binary_location):
+        raise FileNotFoundError(f"Chrome binary not found at {chrome_options.binary_location}")
+    if not os.path.exists(chromedriver_path):
+        raise FileNotFoundError(f"ChromeDriver not found at {chromedriver_path}")
 
     print("ChromeDriver version:", subprocess.getoutput(f"{chromedriver_path} --version"))
 
