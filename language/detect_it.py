@@ -5,29 +5,27 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
+import subprocess 
 
 def setup_driver():
     chrome_options = Options()
-
-    # ✅ Recommended flags for modern Chrome in headless mode
-    chrome_options.add_argument("--headless=new")  # use new headless mode
-    chrome_options.add_argument("--remote-debugging-port=0")  # required in headless environments
+    chrome_options.add_argument("--headless=new")  
+    chrome_options.add_argument("--remote-debugging-port=0") 
     chrome_options.add_argument("--window-size=1200,800")
     chrome_options.add_argument("--disable-gpu")
     chrome_options.add_argument("--no-sandbox")
     chrome_options.add_argument("--disable-dev-shm-usage")
 
-    # ✅ Binary locations set for Render deployment
     chrome_options.binary_location = "/tmp/chrome/chrome/chrome"
+
     chromedriver_path = "/tmp/chrome/chromedriver"
 
-    # Optional debug: print ChromeDriver version
     print("ChromeDriver version:", subprocess.getoutput(f"{chromedriver_path} --version"))
 
     service = Service(executable_path=chromedriver_path)
     driver = webdriver.Chrome(service=service, options=chrome_options)
 
-    print("✅ ChromeDriver successfully started")
+    print("✅ ChromeDriver started successfully")
     return driver
 
 def get_translation(driver, source_lang, target_lang, text):
