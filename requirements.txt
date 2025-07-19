@@ -43,3 +43,4 @@ urllib3==2.5.0
 websocket-client==1.8.0
 wsproto==1.2.0
 undetected-chromedrive==3.5.5
+webdriver-manager==3.8.6

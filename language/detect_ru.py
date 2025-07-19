@@ -5,33 +5,18 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
-import os
+from webdriver_manager.chrome import ChromeDriverManager
 import undetected_chromedriver as uc
 
 def setup_driver():
-    chrome_binary = "/opt/render/project/src/chrome/chrome-linux64/chrome"
-    chromedriver_path = "/opt/render/project/src/morgan/edit/language/chromedriver"
-
-    if os.path.exists(chromedriver_path) and os.access(chromedriver_path, os.X_OK):
-        print("Using local ChromeDriver")
-
-        chrome_options = Options()
-        chrome_options.add_argument("--window-size=1200,800")
-        chrome_options.add_argument("--headless")
-        chrome_options.add_argument("--disable-gpu")
-        chrome_options.add_argument("--no-sandbox")
-        chrome_options.binary_location = chrome_binary
-
-        service = Service(executable_path=chromedriver_path)
-        driver = webdriver.Chrome(service=service, options=chrome_options)
-    else:
-        print("Local ChromeDriver not found or not executable. Using undetected-chromedriver fallback.")
-        driver = uc.Chrome(
-            headless=True,
-            version_main=138,  # Match your downloaded Chrome version
-            browser_executable_path=chrome_binary
-        )
-
+    chrome_options = Options()
+    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--no-sandbox")
+    chrome_options.add_argument("--disable-dev-shm-usage")
+    
+    # Use webdriver-manager to automatically handle ChromeDriver
+    service = Service(ChromeDriverManager().install())
+    driver = webdriver.Chrome(service=service, options=chrome_options)
     return driver
 
 def get_translation(driver, source_lang, target_lang, text):

@@ -1,23 +1,21 @@
 #!/bin/bash
 
-set -e
+# build.sh - Optimized for Render's environment
 
-echo "Downloading Chrome..."
-wget -q https://storage.googleapis.com/chrome-for-testing-public/138.0.7204.157/linux64/chrome-linux64.zip -O chrome.zip
+set -e  # Exit on error
 
-echo "Unzipping Chrome..."
-unzip -q chrome.zip -d chrome
+# Install system dependencies
+echo "Installing system dependencies..."
+apt-get update -y
+apt-get install -y --no-install-recommends \
+    python3-pip \
+    python3-dev \
+    unzip \
+    wget
 
-echo "Making Chrome executable..."
-chmod +x chrome/chrome-linux64/chrome
-
-# Ensure local chromedriver is executable, if it exists
-if [ -f "morgan/edit/language/chromedriver" ]; then
-  echo "Making local ChromeDriver executable..."
-  chmod +x morgan/edit/language/chromedriver
-else
-  echo "Local ChromeDriver not found. Will use undetected-chromedriver fallback."
-fi
-
+# Install Python dependencies
 echo "Installing Python packages..."
-pip install -r requirements.txt
+pip install --upgrade pip
+pip install selenium==4.9.1 webdriver-manager==3.8.6
+
+echo "Build completed successfully."
